@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="favicon.png" />
+<title>ShoulderApp - Wedge Calculator</title>
+<style>
+  html, body { touch-action: manipulation; }
+
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px 16px 40px;
+    color: #1a1a1a;
+    background: #fff;
+  }
+
+  .home-link {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 0.9em;
+    color: #666;
+    text-decoration: none;
+  }
+  .home-link:hover { color: #333; text-decoration: underline; }
+
+  h1 {
+    font-size: 1.5em;
+    margin: 20px 0 8px;
+  }
+
+  .lead {
+    font-size: 0.95em;
+    color: #555;
+    margin: 0 auto 24px;
+    max-width: 560px;
+  }
+
+  .wedge-app {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .control { display: flex; flex-direction: column; gap: 4px; }
+
+  .control label {
+    font-size: 12px;
+    color: #555;
+    font-weight: 600;
+  }
+
+  .control input {
+    padding: 9px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    color: #1a1a1a;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  .control input:focus {
+    outline: none;
+    border-color: #378ADD;
+    box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.18);
+  }
+
+  .diagram-wrap {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .diagram-wrap svg { display: block; width: 100%; height: auto; }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 14px 16px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .summary > div { display: flex; flex-direction: column; gap: 2px; }
+
+  .summary .k {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .summary .v {
+    font-size: 15px;
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+
+  .actions-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 11px 22px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.15s, opacity 0.15s;
+  }
+
+  .btn-primary {
+    background: #1a1a1a;
+    color: white;
+    border: none;
+  }
+  .btn-primary:hover { background: #333; }
+  .btn-primary:disabled { opacity: 0.5; cursor: wait; }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    border: 1px solid #ccc;
+  }
+  .btn-secondary:hover { background: #e0e0e0; }
+
+  .viewer-3d {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 14px 10px;
+  }
+
+  .viewer-3d h2 {
+    font-size: 0.95em;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: #1a1a1a;
+  }
+
+  #three-container {
+    width: 100%;
+    height: 400px;
+    position: relative;
+    touch-action: none;
+    overflow: hidden;
+  }
+
+  #three-container canvas { display: block; }
+
+  .viewer-hint {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin: 8px 0 0;
+  }
+
+  .viewer-fallback {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .three-label {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.92);
+    padding: 2px 6px;
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    transform: translateY(-100%);
+  }
+
+  .footer-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  text { font-family: Arial, sans-serif; }
+  text.t  { font-size: 14px; fill: #1a1a1a; }
+  text.ts { font-size: 12px; fill: #555; }
+  text.th { font-size: 14px; font-weight: 600; fill: #1a1a1a; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.25em; }
+    .controls, .summary { padding: 12px; }
+    #three-container { height: 320px; }
+  }
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<a href="index.html" class="home-link">← Tools</a>
+
+<h1>ShoulderApp - Wedge Calculator</h1>
+<p class="lead">Define the geometry of a cylindrical wedge with two perpendicular tilts. Heights at all four cardinal points are computed live.</p>
+
+<div class="wedge-app">
+
+  <div class="controls">
+    <div class="control">
+      <label for="d-in">Diameter D (mm)</label>
+      <input type="number" id="d-in" value="27.7" step="0.1" min="1" max="500">
+    </div>
+    <div class="control">
+      <label for="a1-in">Plane 1 - angle (°)</label>
+      <input type="number" id="a1-in" value="18" step="0.5" min="0" max="80">
+    </div>
+    <div class="control">
+      <label for="h1-in">Plane 1 - min. height (mm)</label>
+      <input type="number" id="h1-in" value="2" step="0.1" min="0">
+    </div>
+    <div class="control">
+      <label for="a2-in">Plane 2 - angle 90° (°)</label>
+      <input type="number" id="a2-in" value="10" step="0.5" min="0" max="80">
+    </div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 680 480" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Cylindrical wedge with two perpendicular tilts</title>
+      <desc id="svg-desc">Top view of the cylinder with height labels at the four cardinal points, plus two cross-section profiles.</desc>
+
+      <text class="th" x="180" y="28" text-anchor="middle">Top view</text>
+      <text id="lbl-d" class="ts" x="180" y="46" text-anchor="middle">Ø 27.70 mm</text>
+
+      <circle cx="180" cy="230" r="100" fill="none" stroke="#888" stroke-width="1"/>
+      <line x1="60" y1="230" x2="300" y2="230" stroke="#888" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.5"/>
+      <line x1="180" y1="110" x2="180" y2="350" stroke="#888" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.5"/>
+
+      <circle cx="180" cy="230" r="2.5" fill="#555"/>
+      <text id="lbl-c" class="ts" x="190" y="226" text-anchor="start">Center 6.50 mm</text>
+
+      <circle cx="80" cy="230" r="3.5" fill="#185FA5"/>
+      <text id="lbl-w" class="th" x="74" y="234" text-anchor="end" fill="#185FA5">2.00</text>
+      <circle cx="280" cy="230" r="3.5" fill="#185FA5"/>
+      <text id="lbl-e" class="th" x="286" y="234" text-anchor="start" fill="#185FA5">11.00</text>
+      <text id="lbl-axis1" class="ts" x="180" y="378" text-anchor="middle" fill="#185FA5">Axis 1 - 18°</text>
+
+      <circle cx="180" cy="130" r="3.5" fill="#0F6E56"/>
+      <text id="lbl-n" class="th" x="180" y="122" text-anchor="middle" fill="#0F6E56">8.94</text>
+      <circle cx="180" cy="330" r="3.5" fill="#0F6E56"/>
+      <text id="lbl-s" class="th" x="180" y="348" text-anchor="middle" fill="#0F6E56">4.06</text>
+      <text id="lbl-axis2" class="ts" x="180" y="396" text-anchor="middle" fill="#0F6E56">Axis 2 - 10°</text>
+
+      <text id="section1-header" class="th" x="510" y="28" text-anchor="middle">Section - axis 1 (18°)</text>
+      <g id="side-view-1"></g>
+
+      <text id="section2-header" class="th" x="510" y="248" text-anchor="middle">Section - axis 2 (10°)</text>
+      <g id="side-view-2"></g>
+    </svg>
+  </div>
+
+  <div class="summary" id="sum"></div>
+
+  <div class="actions-row">
+    <button class="btn btn-secondary" id="reset-btn">Reset</button>
+    <button class="btn btn-primary" id="download-pdf">Download PDF</button>
+  </div>
+
+  <div class="viewer-3d">
+    <h2>3D view</h2>
+    <div id="three-container">
+      <div class="viewer-fallback">Loading 3D view…</div>
+    </div>
+    <p class="viewer-hint">Drag to rotate · pinch or scroll to zoom</p>
+  </div>
+
+  <p class="footer-note">All heights in mm. Center = average of the four edge heights.<br>Max slope angle = steepest tilt of the top surface, combining both axes.</p>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function clamp(v, lo, hi) { return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
+  function f(n) { return n.toFixed(1); }
+  function setText(id, txt) { var el = $(id); if (el) el.textContent = txt; }
+
+  function drawSide(groupId, D, hMin, hMax, cx, cy, color) {
+    var g = $(groupId);
+    var maxW = 240, maxH = 110;
+    var maxHeight = Math.max(hMin, hMax, 0.5);
+    var scale = Math.min(maxW / D, maxH / maxHeight);
+    var wPx = D * scale;
+    var hMinPx = Math.max(hMin * scale, 1);
+    var hMaxPx = Math.max(hMax * scale, 1);
+    var x0 = cx - wPx / 2;
+    var x1 = cx + wPx / 2;
+    var yBase = cy + 50;
+    var yTL = yBase - hMinPx;
+    var yTR = yBase - hMaxPx;
+
+    g.innerHTML =
+      '<polygon points="' + f(x0) + ',' + f(yBase) + ' ' + f(x1) + ',' + f(yBase) + ' ' + f(x1) + ',' + f(yTR) + ' ' + f(x0) + ',' + f(yTL) + '" fill="' + color + '" fill-opacity="0.14" stroke="' + color + '" stroke-width="1"/>' +
+      '<line x1="' + f(x0) + '" y1="' + f(yBase) + '" x2="' + f(x0) + '" y2="' + f(yTL) + '" stroke="' + color + '" stroke-width="0.5" opacity="0.7"/>' +
+      '<line x1="' + f(x1) + '" y1="' + f(yBase) + '" x2="' + f(x1) + '" y2="' + f(yTR) + '" stroke="' + color + '" stroke-width="0.5" opacity="0.7"/>' +
+      '<text class="ts" x="' + f(x0 - 6) + '" y="' + f((yBase + yTL) / 2 + 4) + '" text-anchor="end" fill="' + color + '">' + hMin.toFixed(2) + ' mm</text>' +
+      '<text class="ts" x="' + f(x1 + 6) + '" y="' + f((yBase + yTR) / 2 + 4) + '" text-anchor="start" fill="' + color + '">' + hMax.toFixed(2) + ' mm</text>' +
+      '<text class="ts" x="' + f(cx) + '" y="' + f(yBase + 18) + '" text-anchor="middle" fill="#888">D = ' + D.toFixed(2) + ' mm</text>';
+  }
+
+  window.wedgeState = {};
+
+  function update() {
+    var D = clamp(parseFloat($('d-in').value), 1, 500);
+    var a1 = clamp(parseFloat($('a1-in').value), 0, 80);
+    var h1min = clamp(parseFloat($('h1-in').value), 0, 1000);
+    var a2 = clamp(parseFloat($('a2-in').value), 0, 80);
+
+    var tan1 = Math.tan(a1 * Math.PI / 180);
+    var tan2 = Math.tan(a2 * Math.PI / 180);
+
+    var h1max = h1min + D * tan1;
+    var center = (h1min + h1max) / 2;
+    var halfD2 = (D / 2) * tan2;
+    var h2min = center - halfD2;
+    var h2max = center + halfD2;
+
+    var combAng = Math.atan(Math.sqrt(tan1*tan1 + tan2*tan2)) * 180 / Math.PI;
+
+    setText('lbl-d', 'Ø ' + D.toFixed(2) + ' mm');
+    setText('lbl-c', 'Center ' + center.toFixed(2) + ' mm');
+    setText('lbl-w', h1min.toFixed(2));
+    setText('lbl-e', h1max.toFixed(2));
+    setText('lbl-n', h2max.toFixed(2));
+    setText('lbl-s', h2min.toFixed(2));
+    setText('lbl-axis1', 'Axis 1 - ' + a1 + '°');
+    setText('lbl-axis2', 'Axis 2 - ' + a2 + '°');
+    setText('section1-header', 'Section - axis 1 (' + a1 + '°)');
+    setText('section2-header', 'Section - axis 2 (' + a2 + '°)');
+
+    drawSide('side-view-1', D, h1min, h1max, 510, 130, '#378ADD');
+    drawSide('side-view-2', D, h2min, h2max, 510, 350, '#1D9E75');
+
+    $('sum').innerHTML =
+      '<div><span class="k">P1 max. height</span><span class="v">' + h1max.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">P2 min. height</span><span class="v">' + h2min.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">P2 max. height</span><span class="v">' + h2max.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">Center height</span><span class="v">' + center.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">Max slope angle</span><span class="v">' + combAng.toFixed(2) + '°</span></div>';
+
+    var state = { D: D, a1: a1, a2: a2, h1min: h1min, h1max: h1max, h2min: h2min, h2max: h2max, center: center, combAng: combAng };
+    window.wedgeState = state;
+    document.dispatchEvent(new CustomEvent('wedge-updated', { detail: state }));
+  }
+
+  window.requestWedgeUpdate = update;
+
+  document.querySelectorAll('input').forEach(function (i) { i.addEventListener('input', update); });
+  update();
+
+  $('reset-btn').addEventListener('click', function () {
+    $('d-in').value = '27.7';
+    $('a1-in').value = '18';
+    $('h1-in').value = '2';
+    $('a2-in').value = '10';
+    if (typeof window.resetWedgeCamera === 'function') window.resetWedgeCamera();
+    update();
+  });
+
+  // PDF export
+
+  function svgToPng(svgEl, targetWidth) {
+    var cloned = svgEl.cloneNode(true);
+    var styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    styleEl.textContent = [
+      'text { font-family: Arial, sans-serif; }',
+      'text.t  { font-size: 14px; fill: #1a1a1a; }',
+      'text.ts { font-size: 12px; fill: #555; }',
+      'text.th { font-size: 14px; font-weight: 600; fill: #1a1a1a; }'
+    ].join('\n');
+    cloned.insertBefore(styleEl, cloned.firstChild);
+
+    var viewBox = cloned.getAttribute('viewBox') || '0 0 680 480';
+    var parts = viewBox.split(' ').map(parseFloat);
+    var vbW = parts[2], vbH = parts[3];
+    cloned.setAttribute('width', vbW);
+    cloned.setAttribute('height', vbH);
+
+    var svgString = new XMLSerializer().serializeToString(cloned);
+    var blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = Math.round(targetWidth * (vbH / vbW));
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve({ dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height });
+      };
+      img.onerror = function (e) { URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
+
+  async function exportPDF() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF('p', 'mm', 'a4');
+    var pageW = 210, pageH = 297, margin = 20;
+    var contentW = pageW - 2 * margin;
+    var s = window.wedgeState;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ShoulderApp - Wedge Calculator', margin, 24);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120);
+    var now = new Date();
+    var dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString().substring(0, 5);
+    doc.text('Generated: ' + dateStr, margin, 30);
+    doc.setTextColor(30);
+
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 34, pageW - margin, 34);
+
+    var y = 44;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Input parameters', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+
+    function row(label, value) {
+      doc.setTextColor(90);
+      doc.text(label, margin + 2, y);
+      doc.setTextColor(20);
+      doc.text(value, margin + 75, y);
+      y += 5.5;
+    }
+
+    row('Diameter D', s.D.toFixed(2) + ' mm');
+    row('Plane 1 - angle', s.a1 + '°');
+    row('Plane 1 - min. height', s.h1min.toFixed(2) + ' mm');
+    row('Plane 2 - angle (90°)', s.a2 + '°');
+
+    y += 4;
+    var svgEl = document.querySelector('.diagram-wrap svg');
+    var png = await svgToPng(svgEl, 1600);
+    var aspect = png.height / png.width;
+    var imgW = contentW;
+    var imgH = imgW * aspect;
+    doc.addImage(png.dataUrl, 'PNG', margin, y, imgW, imgH);
+    y += imgH + 8;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(20);
+    doc.text('Computed values', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+
+    row('P1 max. height', s.h1max.toFixed(2) + ' mm');
+    row('P2 min. height', s.h2min.toFixed(2) + ' mm');
+    row('P2 max. height', s.h2max.toFixed(2) + ' mm');
+    row('Center height', s.center.toFixed(2) + ' mm');
+    row('Max slope angle', s.combAng.toFixed(2) + '°');
+
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('Generated by ShoulderApp · For research and educational use only.', margin, pageH - 14);
+
+    var fileDate = now.toISOString().slice(0, 10);
+    doc.save('wedge-calculation-' + fileDate + '.pdf');
+  }
+
+  $('download-pdf').addEventListener('click', function () {
+    var btn = $('download-pdf');
+    var orig = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    exportPDF()
+      .catch(function (err) {
+        console.error(err);
+        alert('Could not generate PDF. See console for details.');
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = orig;
+      });
+  });
+})();
+</script>
+
+<script type="module">
+  try {
+    const THREE = await import('three');
+    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    const { CSS2DRenderer, CSS2DObject } = await import('three/addons/renderers/CSS2DRenderer.js');
+
+    const container = document.getElementById('three-container');
+    const fallback = container.querySelector('.viewer-fallback');
+    if (fallback) fallback.remove();
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.left = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    container.appendChild(labelRenderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(50, 100, 60);
+    scene.add(dirLight);
+
+    const wedgeMaterial = new THREE.MeshLambertMaterial({
+      color: 0xb6c5d4,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85
+    });
+    const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
+
+    const grid = new THREE.GridHelper(1000, 50, 0xdddddd, 0xeeeeee);
+    grid.material.transparent = true;
+    grid.material.opacity = 0.6;
+    scene.add(grid);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.07;
+    controls.enablePan = false;
+    controls.minDistance = 5;
+    controls.maxDistance = 5000;
+    controls.minPolarAngle = 0.1;
+    controls.maxPolarAngle = Math.PI * 0.85;
+
+    let wedgeMesh = null;
+    let wedgeEdges = null;
+    let markers = [];
+    let labels = [];
+    let cameraInitialized = false;
+
+    function buildWedgeGeometry(D, h1min, h1max, h2min, h2max) {
+      const r = D / 2;
+      const segments = 96;
+      const center = (h1min + h1max) / 2;
+      const tanA1 = (h1max - h1min) / D;
+      const tanA2 = (h2max - h2min) / D;
+      const topY = (x, z) => center + tanA1 * x + tanA2 * z;
+
+      const positions = [];
+      const indices = [];
+
+      positions.push(0, 0, 0);
+      positions.push(0, topY(0, 0), 0);
+
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        const x = r * Math.cos(theta);
+        const z = r * Math.sin(theta);
+        positions.push(x, 0, z);
+      }
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        const x = r * Math.cos(theta);
+        const z = r * Math.sin(theta);
+        positions.push(x, topY(x, z), z);
+      }
+
+      for (let i = 0; i < segments; i++) {
+        const a = 2 + i;
+        const b = 2 + ((i + 1) % segments);
+        indices.push(0, a, b);
+      }
+
+      const topStart = 2 + segments;
+      for (let i = 0; i < segments; i++) {
+        const a = topStart + i;
+        const b = topStart + ((i + 1) % segments);
+        indices.push(1, b, a);
+      }
+
+      for (let i = 0; i < segments; i++) {
+        const bL = 2 + i;
+        const bR = 2 + ((i + 1) % segments);
+        const tL = topStart + i;
+        const tR = topStart + ((i + 1) % segments);
+        indices.push(bL, bR, tR);
+        indices.push(bL, tR, tL);
+      }
+
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+      return geom;
+    }
+
+    function makeMarker(D, hexColor) {
+      const sphereR = Math.max(D * 0.018, 0.15);
+      const geom = new THREE.SphereGeometry(sphereR, 16, 16);
+      const mat = new THREE.MeshBasicMaterial({ color: hexColor });
+      return new THREE.Mesh(geom, mat);
+    }
+
+    function makeLabel(text, hexColor) {
+      const div = document.createElement('div');
+      div.className = 'three-label';
+      div.textContent = text;
+      div.style.color = hexColor;
+      div.style.borderColor = hexColor;
+      div.style.borderStyle = 'solid';
+      div.style.borderWidth = '1px';
+      return new CSS2DObject(div);
+    }
+
+    function disposeMesh(m) {
+      if (!m) return;
+      scene.remove(m);
+      if (m.geometry) m.geometry.dispose();
+    }
+
+    function rebuild(state) {
+      disposeMesh(wedgeMesh);
+      disposeMesh(wedgeEdges);
+      for (const m of markers) disposeMesh(m);
+      for (const l of labels) scene.remove(l);
+      markers = [];
+      labels = [];
+
+      const geom = buildWedgeGeometry(state.D, state.h1min, state.h1max, state.h2min, state.h2max);
+      wedgeMesh = new THREE.Mesh(geom, wedgeMaterial);
+      scene.add(wedgeMesh);
+
+      const edgesGeom = new THREE.EdgesGeometry(geom, 15);
+      wedgeEdges = new THREE.LineSegments(edgesGeom, edgeMaterial);
+      scene.add(wedgeEdges);
+
+      const r = state.D / 2;
+      const blue = 0x185FA5;
+      const teal = 0x0F6E56;
+      const points = [
+        { pos: [-r, state.h1min, 0],   color: blue, hex: '#185FA5', label: 'P1 min' },
+        { pos: [ r, state.h1max, 0],   color: blue, hex: '#185FA5', label: 'P1 max' },
+        { pos: [ 0, state.h2min, -r],  color: teal, hex: '#0F6E56', label: 'P2 min' },
+        { pos: [ 0, state.h2max,  r],  color: teal, hex: '#0F6E56', label: 'P2 max' }
+      ];
+
+      for (const p of points) {
+        const marker = makeMarker(state.D, p.color);
+        marker.position.set(p.pos[0], p.pos[1], p.pos[2]);
+        scene.add(marker);
+        markers.push(marker);
+
+        const label = makeLabel(p.label, p.hex);
+        label.position.set(p.pos[0], p.pos[1] + state.D * 0.05, p.pos[2]);
+        scene.add(label);
+        labels.push(label);
+      }
+
+      grid.scale.setScalar(Math.max(1, state.D / 100));
+
+      if (!cameraInitialized) {
+        const dist = Math.max(state.D, state.h1max) * 2.0;
+        camera.position.set(dist * 0.7, dist * 0.55, dist * 0.95);
+        controls.target.set(0, state.center * 0.6, 0);
+        controls.update();
+        cameraInitialized = true;
+      }
+    }
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      if (w === 0 || h === 0) return;
+      renderer.setSize(w, h);
+      labelRenderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    document.addEventListener('wedge-updated', (e) => rebuild(e.detail));
+
+    window.resetWedgeCamera = function () {
+      cameraInitialized = false;
+    };
+
+    if (window.wedgeState && window.wedgeState.D) {
+      rebuild(window.wedgeState);
+    } else if (typeof window.requestWedgeUpdate === 'function') {
+      window.requestWedgeUpdate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    animate();
+  } catch (err) {
+    console.error('3D viewer failed to load:', err);
+    const container = document.getElementById('three-container');
+    if (container) {
+      container.innerHTML = '<div class="viewer-fallback">3D view could not be loaded. The 2D diagram and table above remain available.</div>';
+    }
+  }
+</script>
+
+</body>
+</html>
