@@ -12,29 +12,52 @@
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 0;
-    padding: 20px 16px 40px;
+    padding: 12px 16px 40px;
     color: #1a1a1a;
     background: #fff;
   }
 
-  .home-link {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 0.9em;
+  .back-link {
+    display: inline-block;
+    margin: 6px auto 0;
+    padding: 4px 8px;
+    font-size: 14px;
     color: #666;
     text-decoration: none;
   }
-  .home-link:hover { color: #333; text-decoration: underline; }
+  .back-link:hover { color: #1a1a1a; text-decoration: underline; }
 
-  h1 { font-size: 1.5em; margin: 20px 0 8px; }
+  h1 { font-size: 1.5em; margin: 8px 0 8px; }
 
   .lead {
     font-size: 0.95em;
     color: #555;
-    margin: 0 auto 24px;
+    margin: 0 auto 12px;
     max-width: 560px;
   }
+
+  .side-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    font-size: 14px;
+    color: #1a1a1a;
+  }
+  .btn-link {
+    background: none;
+    border: none;
+    color: #378ADD;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .btn-link:hover { text-decoration: underline; }
 
   .wedge-app {
     max-width: 720px;
@@ -46,13 +69,26 @@
   }
 
   .controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 12px;
     padding: 16px;
     background: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 8px;
+  }
+  .controls-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .controls-bottom {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 560px) {
+    .controls-top { grid-template-columns: 1fr; }
   }
 
   .control { display: flex; flex-direction: column; gap: 4px; }
@@ -83,7 +119,7 @@
 
   .summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     padding: 14px 16px;
     background: #f5f5f5;
@@ -138,15 +174,23 @@
     background: #fafafa;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 14px 14px 10px;
+    padding: 14px 14px 14px;
   }
 
-  .viewer-3d h2 {
+  .viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .viewer-header h2 {
     font-size: 0.95em;
     font-weight: 600;
-    margin: 0 0 10px;
+    margin: 0;
     color: #1a1a1a;
   }
+
+  .viewer-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
   #three-container {
     width: 100%;
@@ -200,26 +244,33 @@
   text.ts { font-size: 12px; fill: #555; }
   text.th { font-size: 14px; font-weight: 600; fill: #1a1a1a; }
 
-  /* Anatomy toggles inside SVG */
-  .anat-toggle { cursor: pointer; }
-  .anat-toggle rect {
-    fill: #fff;
-    stroke: #bbb;
-    stroke-width: 1;
-    transition: fill 0.15s, stroke 0.15s;
+  /* Anatomy labels (set automatically by side selection) */
+
+  /* Side selection modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
   }
-  .anat-toggle text {
-    font-size: 11px;
-    font-weight: 600;
-    fill: #555;
-    pointer-events: none;
-    user-select: none;
-    -webkit-user-select: none;
+  .modal-overlay.hidden { display: none; }
+  .modal-content {
+    background: white;
+    padding: 28px 24px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
   }
-  .anat-toggle.active rect { fill: #0F6E56; stroke: #0F6E56; }
-  .anat-toggle.active text { fill: #fff; }
-  .anat-toggle:hover rect { stroke: #555; }
-  .anat-toggle.active:hover rect { fill: #0a5544; stroke: #0a5544; }
+  .modal-content h2 { margin: 0 0 8px; font-size: 1.25em; }
+  .modal-content p { margin: 0 0 20px; color: #555; font-size: 0.95em; }
+  .modal-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .modal-btn { min-width: 140px; }
 
   @media (max-width: 600px) {
     h1 { font-size: 1.25em; }
@@ -239,34 +290,49 @@
 </head>
 <body>
 
-<a href="index.html" class="home-link">← Tools</a>
+<a href="index.html" class="back-link">← back</a>
 
 <h1>ShoulderApp - Wedge Calculator</h1>
-<p class="lead">Define the geometry of a cylindrical wedge with two perpendicular tilts. Heights at all four cardinal points are computed live.</p>
+<p class="lead" style="display:none;"></p>
 
 <div class="wedge-app">
 
   <div class="controls">
-    <div class="control">
-      <label for="d-in">Diameter D (mm)</label>
-      <input type="number" id="d-in" value="27.7" step="0.1" min="1" max="500">
+    <div class="controls-top">
+      <div class="control">
+        <label for="pat-id">Patient ID</label>
+        <input type="text" id="pat-id" placeholder="optional">
+      </div>
+      <div class="control">
+        <label>Side</label>
+        <div class="side-display">
+          <span id="side-indicator-text">Right shoulder</span>
+          <button type="button" id="change-side-link" class="btn-link">Change</button>
+        </div>
+      </div>
     </div>
-    <div class="control">
-      <label for="a1-in">Sup/Inf - angle (°)</label>
-      <input type="number" id="a1-in" value="18" step="0.5" min="0" max="80">
-    </div>
-    <div class="control">
-      <label for="h1-in">Inf height (mm)</label>
-      <input type="number" id="h1-in" value="2" step="0.1" min="0">
-    </div>
-    <div class="control">
-      <label for="a2-in">Ant/Post - angle (°)</label>
-      <input type="number" id="a2-in" value="10" step="0.5" min="0" max="80">
+    <div class="controls-bottom">
+      <div class="control">
+        <label for="d-in">Diameter D (mm)</label>
+        <input type="number" id="d-in" value="27" step="0.1" min="1" max="500">
+      </div>
+      <div class="control">
+        <label for="a1-in">Sup/Inf - angle (°)</label>
+        <input type="number" id="a1-in" value="10" step="0.5" min="0" max="80">
+      </div>
+      <div class="control">
+        <label for="h1-in">Inf height (mm)</label>
+        <input type="number" id="h1-in" value="2" step="0.1" min="0">
+      </div>
+      <div class="control">
+        <label for="a2-in">Ant/Post - angle (°)</label>
+        <input type="number" id="a2-in" value="8" step="0.5" min="0" max="80">
+      </div>
     </div>
   </div>
 
   <div class="diagram-wrap">
-    <svg viewBox="0 0 680 480" role="img" aria-labelledby="svg-title svg-desc">
+    <svg viewBox="0 0 680 460" role="img" aria-labelledby="svg-title svg-desc">
       <title id="svg-title">Cylindrical wedge with two perpendicular tilts</title>
       <desc id="svg-desc">Top view of the cylinder with anatomical labels at the four cardinal points and the resulting slope line, plus two cross-section profiles.</desc>
 
@@ -287,50 +353,29 @@
       <circle cx="180" cy="230" r="2.5" fill="#555"/>
       <text id="lbl-c" class="ts" x="190" y="226" text-anchor="start">Center 6.50 mm</text>
 
-      <!-- "sup" label above circle -->
-      <text class="th" x="180" y="110" text-anchor="middle" fill="#185FA5">sup</text>
-      <!-- Top marker (sup, h1max), blue -->
+      <!-- "sup" label and top marker -->
+      <text class="ts" x="180" y="100" text-anchor="middle" fill="#185FA5">sup</text>
       <circle cx="180" cy="130" r="3.5" fill="#185FA5"/>
       <text id="lbl-n" class="th" x="180" y="124" text-anchor="middle" fill="#185FA5">11.00</text>
 
-      <!-- Bottom marker (inf, h1min), blue -->
+      <!-- bottom marker and "inf" label -->
       <circle cx="180" cy="330" r="3.5" fill="#185FA5"/>
       <text id="lbl-s" class="th" x="180" y="346" text-anchor="middle" fill="#185FA5">2.00</text>
-      <!-- "inf" label below circle -->
-      <text class="th" x="180" y="362" text-anchor="middle" fill="#185FA5">inf</text>
+      <text class="ts" x="180" y="372" text-anchor="middle" fill="#185FA5">inf</text>
 
-      <!-- Left marker (h2min), teal -->
+      <!-- Left/right markers -->
       <circle cx="80" cy="230" r="3.5" fill="#0F6E56"/>
       <text id="lbl-w" class="th" x="74" y="234" text-anchor="end" fill="#0F6E56">4.06</text>
-
-      <!-- Right marker (h2max), teal -->
       <circle cx="280" cy="230" r="3.5" fill="#0F6E56"/>
       <text id="lbl-e" class="th" x="286" y="234" text-anchor="start" fill="#0F6E56">8.94</text>
 
-      <!-- Anatomy toggles (left side) -->
-      <g id="anat-toggle-left-ant" class="anat-toggle active" data-side="left" data-pos="ant">
-        <rect x="6" y="208" width="36" height="20" rx="3"/>
-        <text x="24" y="222" text-anchor="middle">ant</text>
-      </g>
-      <g id="anat-toggle-left-post" class="anat-toggle" data-side="left" data-pos="post">
-        <rect x="6" y="232" width="36" height="20" rx="3"/>
-        <text x="24" y="246" text-anchor="middle">post</text>
-      </g>
+      <!-- Anatomy labels (auto-set by side selection) -->
+      <text id="anat-label-left" class="ts" x="24" y="234" text-anchor="middle" fill="#0F6E56">post</text>
+      <text id="anat-label-right" class="ts" x="336" y="234" text-anchor="middle" fill="#0F6E56">ant</text>
 
-      <!-- Anatomy toggles (right side) -->
-      <g id="anat-toggle-right-ant" class="anat-toggle" data-side="right" data-pos="ant">
-        <rect x="318" y="208" width="36" height="20" rx="3"/>
-        <text x="336" y="222" text-anchor="middle">ant</text>
-      </g>
-      <g id="anat-toggle-right-post" class="anat-toggle active" data-side="right" data-pos="post">
-        <rect x="318" y="232" width="36" height="20" rx="3"/>
-        <text x="336" y="246" text-anchor="middle">post</text>
-      </g>
-
-      <!-- Bottom labels -->
-      <text id="lbl-axis1" class="ts" x="180" y="388" text-anchor="middle" fill="#185FA5">Sup/Inf - 18°</text>
-      <text id="lbl-axis2" class="ts" x="180" y="406" text-anchor="middle" fill="#0F6E56">Ant/Post - 10°</text>
-      <text id="lbl-result" class="th" x="180" y="426" text-anchor="middle" fill="#000">Resulting slope - 20.29°</text>
+      <!-- Resulting slope label (two lines) -->
+      <text class="ts" x="180" y="395" text-anchor="middle" fill="#555">Resulting slope:</text>
+      <text id="lbl-result" class="th" x="180" y="415" text-anchor="middle" fill="#000">20.29° at 12:57</text>
 
       <!-- Section views (right half) -->
       <text id="section1-header" class="th" x="510" y="28" text-anchor="middle">Section - sup/inf (18°)</text>
@@ -349,7 +394,13 @@
   </div>
 
   <div class="viewer-3d">
-    <h2>3D view</h2>
+    <div class="viewer-header">
+      <h2>3D view</h2>
+      <div class="viewer-buttons">
+        <button class="btn btn-secondary" id="recenter-btn" style="padding: 7px 14px; font-size: 12px;">Recenter</button>
+        <button class="btn btn-secondary" id="download-stl" style="padding: 7px 14px; font-size: 12px;">Download .stl</button>
+      </div>
+    </div>
     <div id="three-container">
       <div class="viewer-fallback">Loading 3D view…</div>
     </div>
@@ -358,6 +409,17 @@
 
   <p class="footer-note">All heights in mm. Center = average of the four edge heights.<br>Resulting slope = steepest tilt of the top surface (combining both axes); its endpoints give the absolute thinnest and thickest points of the wedge.</p>
 
+</div>
+
+<!-- Side selection modal -->
+<div id="side-modal" class="modal-overlay">
+  <div class="modal-content">
+    <h2>Select side</h2>
+    <div class="modal-buttons">
+      <button class="btn btn-primary modal-btn" data-side="left">Left shoulder</button>
+      <button class="btn btn-primary modal-btn" data-side="right">Right shoulder</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -369,6 +431,23 @@
   function f(n) { return n.toFixed(1); }
   function setText(id, txt) { var el = $(id); if (el) el.textContent = txt; }
 
+  // Format clock position using standard clock-face convention:
+  //   12 at top (vertical up), 3 on the right, 6 at bottom, 9 on the left.
+  // dirRad is the math-angle (from +x toward +y) of the upper endpoint of the slope line.
+  function formatClockPosition(dirRad) {
+    var mathAngleDeg = dirRad * 180 / Math.PI;
+    var clockAngleDeg = 90 - mathAngleDeg;
+    while (clockAngleDeg < 0) clockAngleDeg += 360;
+    while (clockAngleDeg >= 360) clockAngleDeg -= 360;
+    var totalHours = (clockAngleDeg / 360) * 12;
+    var hours = Math.floor(totalHours);
+    var minutes = Math.round((totalHours - hours) * 60);
+    if (minutes === 60) { minutes = 0; hours++; }
+    if (hours === 0) hours = 12;
+    if (hours > 12) hours -= 12;
+    return hours + ':' + (minutes < 10 ? '0' + minutes : minutes);
+  }
+
   function drawSide(groupId, D, hLeft, hRight, cx, cy, color, leftLabel, rightLabel) {
     var g = $(groupId);
     var maxW = 240, maxH = 110;
@@ -379,7 +458,7 @@
     var hRightPx = Math.max(hRight * scale, 1);
     var x0 = cx - wPx / 2;
     var x1 = cx + wPx / 2;
-    var yBase = cy + 50;
+    var yBase = cy + 30;
     var yTL = yBase - hLeftPx;
     var yTR = yBase - hRightPx;
 
@@ -401,48 +480,77 @@
     g.innerHTML = html;
   }
 
-  function drawResultLine(groupId, dirRad, resultMin, resultMax) {
+  function drawResultLine(groupId, dirRad, resultMin, resultMax, clockStr) {
     var g = $(groupId);
     var cx = 180, cy = 230, rPx = 100;
     var dx = rPx * Math.cos(dirRad);
     var dy = rPx * Math.sin(dirRad);
-    // SVG y is inverted (math +y = SVG -y)
     var maxX = cx + dx, maxY = cy - dy;
     var minX = cx - dx, minY = cy + dy;
-    var lblOffset = 14;
+    var lblOffset = 8;
     var lblMaxX = cx + (rPx + lblOffset) * Math.cos(dirRad);
     var lblMaxY = cy - (rPx + lblOffset) * Math.sin(dirRad);
     var lblMinX = cx - (rPx + lblOffset) * Math.cos(dirRad);
     var lblMinY = cy + (rPx + lblOffset) * Math.sin(dirRad);
 
+    // Anchor labels at the edge closest to the circle so they extend outward
+    var threshold = 5;
+    var anchorMax, anchorMin;
+    if (Math.abs(dx) < threshold) {
+      anchorMax = 'middle';
+      anchorMin = 'middle';
+    } else if (dx > 0) {
+      anchorMax = 'start';
+      anchorMin = 'end';
+    } else {
+      anchorMax = 'end';
+      anchorMin = 'start';
+    }
+
     g.innerHTML =
       '<line x1="' + f(minX) + '" y1="' + f(minY) + '" x2="' + f(maxX) + '" y2="' + f(maxY) + '" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>' +
       '<circle cx="' + f(minX) + '" cy="' + f(minY) + '" r="3.5" fill="#000"/>' +
       '<circle cx="' + f(maxX) + '" cy="' + f(maxY) + '" r="3.5" fill="#000"/>' +
-      '<text class="th" x="' + f(lblMaxX) + '" y="' + f(lblMaxY + 4) + '" text-anchor="middle" fill="#000">' + resultMax.toFixed(2) + '</text>' +
-      '<text class="th" x="' + f(lblMinX) + '" y="' + f(lblMinY + 4) + '" text-anchor="middle" fill="#000">' + resultMin.toFixed(2) + '</text>';
+      '<text class="th" x="' + f(lblMaxX) + '" y="' + f(lblMaxY + 4) + '" text-anchor="' + anchorMax + '" fill="#000">' + resultMax.toFixed(2) + ' (' + clockStr + ')</text>' +
+      '<text class="th" x="' + f(lblMinX) + '" y="' + f(lblMinY + 4) + '" text-anchor="' + anchorMin + '" fill="#000">' + resultMin.toFixed(2) + '</text>';
   }
 
-  // Anatomy toggle state
-  function setAnatomy(leftPos) {
-    $('anat-toggle-left-ant').classList.toggle('active', leftPos === 'ant');
-    $('anat-toggle-left-post').classList.toggle('active', leftPos === 'post');
-    $('anat-toggle-right-ant').classList.toggle('active', leftPos === 'post');
-    $('anat-toggle-right-post').classList.toggle('active', leftPos === 'ant');
+  // Anatomy state (driven by side selection — no manual toggle UI anymore)
+  var leftAnat = 'post';
+
+  function setAnatomy(pos) {
+    leftAnat = pos;
+    $('anat-label-left').textContent = pos;
+    $('anat-label-right').textContent = (pos === 'ant') ? 'post' : 'ant';
   }
 
   function getAnatomyState() {
-    return $('anat-toggle-left-ant').classList.contains('active') ? 'ant' : 'post';
+    return leftAnat;
   }
 
-  document.querySelectorAll('.anat-toggle').forEach(function (el) {
-    el.addEventListener('click', function () {
-      var side = el.dataset.side;
-      var pos = el.dataset.pos;
-      var leftPos = (side === 'left') ? pos : (pos === 'ant' ? 'post' : 'ant');
-      setAnatomy(leftPos);
-      update();
-    });
+  // Side selection modal
+  window.wedgeSide = 'right';
+
+  function showSideModal() { $('side-modal').classList.remove('hidden'); }
+  function hideSideModal() { $('side-modal').classList.add('hidden'); }
+
+  function setSide(side) {
+    window.wedgeSide = side;
+    // Right shoulder -> posterior on left of circle (so left=post)
+    // Left shoulder  -> anterior on left of circle (so left=ant)
+    setAnatomy(side === 'right' ? 'post' : 'ant');
+    $('side-indicator-text').textContent = side === 'right' ? 'Right shoulder' : 'Left shoulder';
+    hideSideModal();
+    update();
+  }
+
+  document.querySelectorAll('.modal-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { setSide(btn.dataset.side); });
+  });
+
+  $('change-side-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    showSideModal();
   });
 
   window.wedgeState = {};
@@ -456,57 +564,61 @@
     var tan1 = Math.tan(a1 * Math.PI / 180);
     var tan2 = Math.tan(a2 * Math.PI / 180);
 
-    // h1 = sup/inf direction (vertical), h2 = ant/post direction (horizontal)
-    var h1max = h1min + D * tan1;        // sup height
+    var h1max = h1min + D * tan1;
     var center = (h1min + h1max) / 2;
     var halfD2 = (D / 2) * tan2;
-    var h2min = center - halfD2;          // left side height
-    var h2max = center + halfD2;          // right side height
+    var h2min = center - halfD2;
+    var h2max = center + halfD2;
+
+    var leftAnat = getAnatomyState();
+    var rightAnat = (leftAnat === 'ant') ? 'post' : 'ant';
+
+    // Mirror the geometry visually when the anterior side is on the left of the circle
+    // (left shoulder). Convention: posterior is the HIGHER side, anterior is the LOWER side.
+    // For right shoulder (post on left of circle): tan2 negative so wedge tilts toward -x (post).
+    // For left shoulder (post on right): tan2 positive so wedge tilts toward +x (post).
+    var mirrored = (leftAnat === 'ant');
+    var tan2Signed = mirrored ? tan2 : -tan2;
 
     var combAng = Math.atan(Math.sqrt(tan1*tan1 + tan2*tan2)) * 180 / Math.PI;
-    // Resulting slope direction angle from horizontal (ant/post = +x axis)
-    // toward vertical (sup = +y axis)
-    var resultDirRad = Math.atan2(tan1, tan2);
+    var resultDirRad = Math.atan2(tan1, tan2Signed);
     var halfDiff = (D / 2) * Math.sqrt(tan1*tan1 + tan2*tan2);
     var resultMin = center - halfDiff;
     var resultMax = center + halfDiff;
+    var clockStr = formatClockPosition(resultDirRad);
 
-    var leftAnat = getAnatomyState();
-    var leftAnatLabel = leftAnat;
-    var rightAnatLabel = (leftAnat === 'ant') ? 'post' : 'ant';
+    // Visual heights at left/right of the circle: posterior side shows h2max (higher),
+    // anterior side shows h2min (lower).
+    var hVisualLeft = mirrored ? h2min : h2max;
+    var hVisualRight = mirrored ? h2max : h2min;
 
-    // Top view labels
     setText('lbl-d', 'Ø ' + D.toFixed(2) + ' mm');
     setText('lbl-c', 'Center ' + center.toFixed(2) + ' mm');
-    setText('lbl-n', h1max.toFixed(2));    // sup (top)
-    setText('lbl-s', h1min.toFixed(2));    // inf (bottom)
-    setText('lbl-w', h2min.toFixed(2));    // left
-    setText('lbl-e', h2max.toFixed(2));    // right
-    setText('lbl-axis1', 'Sup/Inf - ' + a1 + '°');
-    setText('lbl-axis2', 'Ant/Post - ' + a2 + '°');
-    setText('lbl-result', 'Resulting slope - ' + combAng.toFixed(2) + '°');
+    setText('lbl-n', h1max.toFixed(2));
+    setText('lbl-s', h1min.toFixed(2));
+    setText('lbl-w', hVisualLeft.toFixed(2));
+    setText('lbl-e', hVisualRight.toFixed(2));
+    setText('lbl-result', combAng.toFixed(2) + '° at ' + clockStr);
     setText('section1-header', 'Section - sup/inf (' + a1 + '°)');
     setText('section2-header', 'Section - ant/post (' + a2 + '°)');
 
-    // Section views
     drawSide('side-view-1', D, h1min, h1max, 510, 130, '#378ADD', 'inf', 'sup');
-    drawSide('side-view-2', D, h2min, h2max, 510, 350, '#1D9E75', leftAnatLabel, rightAnatLabel);
-    drawResultLine('result-slope-line', resultDirRad, resultMin, resultMax);
+    drawSide('side-view-2', D, hVisualLeft, hVisualRight, 510, 350, '#1D9E75', leftAnat, rightAnat);
+    drawResultLine('result-slope-line', resultDirRad, resultMin, resultMax, clockStr);
 
-    // Compute anatomical heights
-    var antHeight = (leftAnat === 'ant') ? h2min : h2max;
-    var postHeight = (leftAnat === 'ant') ? h2max : h2min;
+    // Anatomical heights: anterior is the lower side, posterior is the higher
+    var antHeight = h2min;
+    var postHeight = h2max;
 
-    // Summary
     $('sum').innerHTML =
-      '<div><span class="k">Sup height</span><span class="v">' + h1max.toFixed(2) + ' mm</span></div>' +
-      '<div><span class="k">Inf height</span><span class="v">' + h1min.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">Superior height</span><span class="v">' + h1max.toFixed(2) + ' mm</span></div>' +
+      '<div><span class="k">Inferior height</span><span class="v">' + h1min.toFixed(2) + ' mm</span></div>' +
       '<div><span class="k">Anterior height</span><span class="v">' + antHeight.toFixed(2) + ' mm</span></div>' +
       '<div><span class="k">Posterior height</span><span class="v">' + postHeight.toFixed(2) + ' mm</span></div>' +
-      '<div><span class="k">Center height</span><span class="v">' + center.toFixed(2) + ' mm</span></div>' +
-      '<div><span class="k">Resulting slope angle</span><span class="v">' + combAng.toFixed(2) + '°</span></div>' +
+      '<div><span class="k">Resulting min. height</span><span class="v">' + resultMin.toFixed(2) + ' mm</span></div>' +
       '<div><span class="k">Resulting max. height</span><span class="v">' + resultMax.toFixed(2) + ' mm</span></div>' +
-      '<div><span class="k">Resulting min. height</span><span class="v">' + resultMin.toFixed(2) + ' mm</span></div>';
+      '<div><span class="k">Resulting slope angle</span><span class="v">' + combAng.toFixed(2) + '°</span></div>' +
+      '<div><span class="k">Clock position</span><span class="v">' + clockStr + '</span></div>';
 
     var state = {
       D: D, a1: a1, a2: a2,
@@ -514,8 +626,12 @@
       h2min: h2min, h2max: h2max,
       center: center, combAng: combAng,
       resultMin: resultMin, resultMax: resultMax,
+      resultDirRad: resultDirRad,
       antHeight: antHeight, postHeight: postHeight,
-      leftAnat: leftAnat
+      leftAnat: leftAnat,
+      side: window.wedgeSide,
+      mirrored: mirrored,
+      clockStr: clockStr
     };
     window.wedgeState = state;
     document.dispatchEvent(new CustomEvent('wedge-updated', { detail: state }));
@@ -524,14 +640,18 @@
   window.requestWedgeUpdate = update;
 
   document.querySelectorAll('input').forEach(function (i) { i.addEventListener('input', update); });
+
+  // Initial render with default 'right' side (left=post)
+  setAnatomy('post');
   update();
+  // Show side selection modal on first load
+  showSideModal();
 
   $('reset-btn').addEventListener('click', function () {
-    $('d-in').value = '27.7';
-    $('a1-in').value = '18';
+    $('d-in').value = '27';
+    $('a1-in').value = '10';
     $('h1-in').value = '2';
-    $('a2-in').value = '10';
-    setAnatomy('ant'); // reset toggle to default: left=ant
+    $('a2-in').value = '8';
     if (typeof window.resetWedgeCamera === 'function') window.resetWedgeCamera();
     update();
   });
@@ -545,15 +665,11 @@
       'text { font-family: Arial, sans-serif; }',
       'text.t  { font-size: 14px; fill: #1a1a1a; }',
       'text.ts { font-size: 12px; fill: #555; }',
-      'text.th { font-size: 14px; font-weight: 600; fill: #1a1a1a; }',
-      '.anat-toggle rect { fill: #fff; stroke: #bbb; stroke-width: 1; }',
-      '.anat-toggle text { font-size: 11px; font-weight: 600; fill: #555; }',
-      '.anat-toggle.active rect { fill: #0F6E56; stroke: #0F6E56; }',
-      '.anat-toggle.active text { fill: #fff; }'
+      'text.th { font-size: 14px; font-weight: 600; fill: #1a1a1a; }'
     ].join('\n');
     cloned.insertBefore(styleEl, cloned.firstChild);
 
-    var viewBox = cloned.getAttribute('viewBox') || '0 0 680 480';
+    var viewBox = cloned.getAttribute('viewBox') || '0 0 680 460';
     var parts = viewBox.split(' ').map(parseFloat);
     var vbW = parts[2], vbH = parts[3];
     cloned.setAttribute('width', vbW);
@@ -591,19 +707,34 @@
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('ShoulderApp - Wedge Calculator', margin, 24);
+
+    var patId = (($('pat-id') && $('pat-id').value) || '').trim();
+    var dateY = 30;
+    var dividerY = 34;
+    var contentStartY = 44;
+    if (patId) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40);
+      doc.text('Patient ID: ' + patId, margin, 32);
+      dateY = 38;
+      dividerY = 42;
+      contentStartY = 52;
+    }
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(120);
     var now = new Date();
     var dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString().substring(0, 5);
-    doc.text('Generated: ' + dateStr, margin, 30);
+    doc.text('Generated: ' + dateStr, margin, dateY);
     doc.setTextColor(30);
 
     doc.setDrawColor(220);
     doc.setLineWidth(0.3);
-    doc.line(margin, 34, pageW - margin, 34);
+    doc.line(margin, dividerY, pageW - margin, dividerY);
 
-    var y = 44;
+    var y = contentStartY;
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.text('Input parameters', margin, y);
@@ -619,11 +750,11 @@
       y += 5.5;
     }
 
+    row('Side', s.side === 'right' ? 'Right shoulder' : 'Left shoulder');
     row('Diameter D', s.D.toFixed(2) + ' mm');
     row('Sup/Inf - angle', s.a1 + '°');
     row('Inf height', s.h1min.toFixed(2) + ' mm');
     row('Ant/Post - angle', s.a2 + '°');
-    row('Anterior side', s.leftAnat === 'ant' ? 'left' : 'right');
 
     y += 4;
     var svgEl = document.querySelector('.diagram-wrap svg');
@@ -642,14 +773,14 @@
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
 
-    row('Sup height', s.h1max.toFixed(2) + ' mm');
-    row('Inf height', s.h1min.toFixed(2) + ' mm');
+    row('Superior height', s.h1max.toFixed(2) + ' mm');
+    row('Inferior height', s.h1min.toFixed(2) + ' mm');
     row('Anterior height', s.antHeight.toFixed(2) + ' mm');
     row('Posterior height', s.postHeight.toFixed(2) + ' mm');
-    row('Center height', s.center.toFixed(2) + ' mm');
-    row('Resulting slope angle', s.combAng.toFixed(2) + '°');
-    row('Resulting max. height', s.resultMax.toFixed(2) + ' mm');
     row('Resulting min. height', s.resultMin.toFixed(2) + ' mm');
+    row('Resulting max. height', s.resultMax.toFixed(2) + ' mm');
+    row('Resulting slope angle', s.combAng.toFixed(2) + '°');
+    row('Clock position', s.clockStr);
 
     doc.setFontSize(8);
     doc.setTextColor(150);
@@ -680,8 +811,9 @@
 <script type="module">
   try {
     const THREE = await import('three');
-    const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+    const { TrackballControls } = await import('three/addons/controls/TrackballControls.js');
     const { CSS2DRenderer, CSS2DObject } = await import('three/addons/renderers/CSS2DRenderer.js');
+    const { STLExporter } = await import('three/addons/exporters/STLExporter.js');
 
     const container = document.getElementById('three-container');
     const fallback = container.querySelector('.viewer-fallback');
@@ -720,14 +852,16 @@
     grid.material.opacity = 0.6;
     scene.add(grid);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.07;
-    controls.enablePan = false;
+    // TrackballControls — free rotation in all directions, no limits
+    const controls = new TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 3.5;
+    controls.zoomSpeed = 1.4;
+    controls.panSpeed = 0;
+    controls.noPan = true;
+    controls.staticMoving = false;
+    controls.dynamicDampingFactor = 0.15;
     controls.minDistance = 5;
     controls.maxDistance = 5000;
-    controls.minPolarAngle = 0.1;
-    controls.maxPolarAngle = Math.PI * 0.85;
 
     let wedgeMesh = null;
     let wedgeEdges = null;
@@ -735,16 +869,15 @@
     let labels = [];
     let cameraInitialized = false;
 
-    // Geometry mapping:
-    //   3D x-axis = Ant/Post (Plane 2). +x has h2max.
-    //   3D z-axis = Sup/Inf (Plane 1). +z has h1max (sup).
-    //   3D y-axis = up (wedge thickness direction).
-    function buildWedgeGeometry(D, h1min, h1max, h2min, h2max) {
+    function buildWedgeGeometry(D, h1min, h1max, h2min, h2max, mirrored) {
       const r = D / 2;
       const segments = 96;
       const center = (h1min + h1max) / 2;
-      const tanA1 = (h1max - h1min) / D; // sup/inf tilt -> z direction
-      const tanA2 = (h2max - h2min) / D; // ant/post tilt -> x direction
+      const tanA1 = (h1max - h1min) / D;
+      const tanA2 = (h2max - h2min) / D * (mirrored ? -1 : 1);
+      // x = ant/post, z = sup/inf, y = up. 3D x convention is opposite of 2D math x:
+      // 3D +x corresponds to 2D circle LEFT (where post sits for right shoulder), so the
+      // 3D bird's-eye view orientation matches the 2D top view when toggling sides.
       const topY = (x, z) => center + tanA2 * x + tanA1 * z;
 
       const positions = [];
@@ -819,15 +952,25 @@
       if (m.geometry) m.geometry.dispose();
     }
 
+    let slopeLine = null;
+    let slopeMaxMarker = null;
+    let slopeMinMarker = null;
+    let currentState = null;
+
     function rebuild(state) {
+      currentState = state;
       disposeMesh(wedgeMesh);
       disposeMesh(wedgeEdges);
+      disposeMesh(slopeLine);
+      disposeMesh(slopeMaxMarker);
+      disposeMesh(slopeMinMarker);
       for (const m of markers) disposeMesh(m);
       for (const l of labels) scene.remove(l);
       markers = [];
       labels = [];
 
-      const geom = buildWedgeGeometry(state.D, state.h1min, state.h1max, state.h2min, state.h2max);
+      const mirrored = !!state.mirrored;
+      const geom = buildWedgeGeometry(state.D, state.h1min, state.h1max, state.h2min, state.h2max, mirrored);
       wedgeMesh = new THREE.Mesh(geom, wedgeMaterial);
       scene.add(wedgeMesh);
 
@@ -839,12 +982,17 @@
       const blue = 0x185FA5;
       const teal = 0x0F6E56;
       const leftAnatIs = state.leftAnat || 'ant';
-      // 3D mapping: -x and +x are the ant/post pair; -z and +z are inf/sup
+
+      // Compute heights at marker positions using the same signed tan2 as the mesh
+      const tanA1 = (state.h1max - state.h1min) / state.D;
+      const tanA2 = (state.h2max - state.h2min) / state.D * (mirrored ? -1 : 1);
+      const topY = (x, z) => state.center + tanA2 * x + tanA1 * z;
+
       const points = [
-        { pos: [-r, state.h2min, 0], color: teal, hex: '#0F6E56', label: leftAnatIs === 'ant' ? 'Ant' : 'Post' },
-        { pos: [ r, state.h2max, 0], color: teal, hex: '#0F6E56', label: leftAnatIs === 'ant' ? 'Post' : 'Ant' },
-        { pos: [ 0, state.h1min, -r], color: blue, hex: '#185FA5', label: 'Inf' },
-        { pos: [ 0, state.h1max,  r], color: blue, hex: '#185FA5', label: 'Sup' }
+        { pos: [-r, topY(-r, 0), 0], color: teal, hex: '#0F6E56', label: leftAnatIs === 'ant' ? 'Post' : 'Ant' },
+        { pos: [ r, topY( r, 0), 0], color: teal, hex: '#0F6E56', label: leftAnatIs === 'ant' ? 'Ant' : 'Post' },
+        { pos: [ 0, topY(0, -r), -r], color: blue, hex: '#185FA5', label: 'Inf' },
+        { pos: [ 0, topY(0,  r),  r], color: blue, hex: '#185FA5', label: 'Sup' }
       ];
 
       for (const p of points) {
@@ -859,15 +1007,45 @@
         labels.push(label);
       }
 
+      // Black resulting slope line on the wedge top, between min and max endpoints
+      if (typeof state.resultDirRad === 'number') {
+        const cos = Math.cos(state.resultDirRad);
+        const sin = Math.sin(state.resultDirRad);
+        const maxPoint = new THREE.Vector3(-cos * r, state.resultMax, sin * r);
+        const minPoint = new THREE.Vector3(cos * r, state.resultMin, -sin * r);
+
+        const slopeLineGeom = new THREE.BufferGeometry().setFromPoints([minPoint, maxPoint]);
+        const slopeLineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+        slopeLine = new THREE.Line(slopeLineGeom, slopeLineMat);
+        scene.add(slopeLine);
+
+        const slopeSphereR = Math.max(state.D * 0.024, 0.2);
+        const slopeSphereGeom = new THREE.SphereGeometry(slopeSphereR, 16, 16);
+        const slopeSphereMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        slopeMaxMarker = new THREE.Mesh(slopeSphereGeom, slopeSphereMat);
+        slopeMaxMarker.position.copy(maxPoint);
+        scene.add(slopeMaxMarker);
+
+        slopeMinMarker = new THREE.Mesh(slopeSphereGeom.clone(), slopeSphereMat);
+        slopeMinMarker.position.copy(minPoint);
+        scene.add(slopeMinMarker);
+      }
+
       grid.scale.setScalar(Math.max(1, state.D / 100));
 
       if (!cameraInitialized) {
-        const dist = Math.max(state.D, state.h1max) * 2.0;
-        camera.position.set(dist * 0.7, dist * 0.55, dist * 0.95);
-        controls.target.set(0, state.center * 0.6, 0);
-        controls.update();
+        recenterCamera(state);
         cameraInitialized = true;
       }
+    }
+
+    function recenterCamera(state) {
+      const dist = Math.max(state.D, state.h1max || 1, state.h2max || 1) * 2.4;
+      camera.position.set(0, dist, 0);
+      camera.up.set(0, 0, 1);
+      camera.lookAt(0, state.center * 0.5, 0);
+      controls.target.set(0, state.center * 0.5, 0);
+      controls.update();
     }
 
     function resize() {
@@ -879,6 +1057,8 @@
       labelRenderer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      // TrackballControls need to be told about size changes
+      if (typeof controls.handleResize === 'function') controls.handleResize();
     }
 
     window.addEventListener('resize', resize);
@@ -894,6 +1074,45 @@
       window.requestWedgeUpdate();
     }
 
+    // Recenter button — bird's-eye view from above with sup at 12, inf at 6
+    const recenterBtn = document.getElementById('recenter-btn');
+    if (recenterBtn) {
+      recenterBtn.addEventListener('click', () => {
+        const s = currentState || window.wedgeState;
+        if (!s || !s.D) return;
+        recenterCamera(s);
+      });
+    }
+
+    // STL download
+    const stlExporter = new STLExporter();
+    const stlBtn = document.getElementById('download-stl');
+    if (stlBtn) {
+      stlBtn.addEventListener('click', () => {
+        if (!wedgeMesh) {
+          alert('3D model not yet ready.');
+          return;
+        }
+        try {
+          const stlString = stlExporter.parse(wedgeMesh);
+          const blob = new Blob([stlString], { type: 'application/sla' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          const fileDate = new Date().toISOString().slice(0, 10);
+          const sideStr = (window.wedgeSide || 'wedge');
+          link.download = 'wedge-' + sideStr + '-' + fileDate + '.stl';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 200);
+        } catch (err) {
+          console.error('STL export failed:', err);
+          alert('Could not export STL. See console for details.');
+        }
+      });
+    }
+
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
@@ -907,6 +1126,10 @@
     if (container) {
       container.innerHTML = '<div class="viewer-fallback">3D view could not be loaded. The 2D diagram and table above remain available.</div>';
     }
+    const stlBtn = document.getElementById('download-stl');
+    if (stlBtn) stlBtn.style.display = 'none';
+    const recenterBtn = document.getElementById('recenter-btn');
+    if (recenterBtn) recenterBtn.style.display = 'none';
   }
 </script>
 
