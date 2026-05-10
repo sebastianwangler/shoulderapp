@@ -152,6 +152,26 @@
   }
   .reset-btn:hover { background: #f0f0f0; border-color: #999; }
 
+  .side-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .side-row .side-display {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Default (desktop) — Reset sits next to Side; the in-row one near the input is hidden */
+  .reset-mobile { display: none; }
+  .reset-desktop { display: inline-flex; }
+
+  /* Mobile — Reset goes back next to the Patient ID input */
+  @media (max-width: 560px) {
+    .reset-mobile { display: inline-flex; }
+    .reset-desktop { display: none; }
+  }
+
   .diagram-wrap {
     background: #fff;
     border: 1px solid #ddd;
@@ -347,14 +367,17 @@
         <label for="pat-id">Patient ID</label>
         <div class="id-row">
           <input type="text" id="pat-id" placeholder="optional">
-          <button type="button" id="reset-btn" class="reset-btn">Reset</button>
+          <button type="button" data-reset class="reset-btn reset-mobile">Reset</button>
         </div>
       </div>
       <div class="control">
         <label>Side</label>
-        <div class="side-display">
-          <span id="side-indicator-text">Right shoulder</span>
-          <button type="button" id="change-side-link" class="btn-link">Change</button>
+        <div class="side-row">
+          <div class="side-display">
+            <span id="side-indicator-text">Right shoulder</span>
+            <button type="button" id="change-side-link" class="btn-link">Change</button>
+          </div>
+          <button type="button" data-reset class="reset-btn reset-desktop">Reset</button>
         </div>
       </div>
     </div>
@@ -748,10 +771,13 @@
   // Show side selection modal on first load
   showSideModal();
 
-  $('reset-btn').addEventListener('click', function () {
-    // Full reset: reload the page so all inputs (incl. Patient ID) return to defaults
-    // and the Side modal reappears. Matches the behavior of Reset in glenoid.
-    window.location.reload();
+  // Both Reset buttons (mobile + desktop variants) use data-reset attribute
+  document.querySelectorAll('[data-reset]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      // Full reset: reload the page so all inputs (incl. Patient ID) return to defaults
+      // and the Side modal reappears. Matches the behavior of Reset in glenoid.
+      window.location.reload();
+    });
   });
 
   // PDF export
