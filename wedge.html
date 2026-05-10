@@ -130,6 +130,28 @@
     box-shadow: 0 0 0 3px rgba(55, 138, 221, 0.18);
   }
 
+  .id-row {
+    display: flex;
+    gap: 8px;
+  }
+  .id-row input {
+    flex: 1;
+    min-width: 0;
+  }
+  .reset-btn {
+    padding: 9px 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .reset-btn:hover { background: #f0f0f0; border-color: #999; }
+
   .diagram-wrap {
     background: #fff;
     border: 1px solid #ddd;
@@ -323,7 +345,10 @@
     <div class="controls-top">
       <div class="control">
         <label for="pat-id">Patient ID</label>
-        <input type="text" id="pat-id" placeholder="optional">
+        <div class="id-row">
+          <input type="text" id="pat-id" placeholder="optional">
+          <button type="button" id="reset-btn" class="reset-btn">Reset</button>
+        </div>
       </div>
       <div class="control">
         <label>Side</label>
@@ -411,7 +436,6 @@
   <div class="summary" id="sum"></div>
 
   <div class="actions-row">
-    <button class="btn btn-secondary" id="reset-btn">Reset</button>
     <button class="btn btn-primary" id="download-pdf">Download PDF</button>
   </div>
 
@@ -725,12 +749,9 @@
   showSideModal();
 
   $('reset-btn').addEventListener('click', function () {
-    $('d-in').value = '27';
-    $('a1-in').value = '10';
-    $('h1-in').value = '2';
-    $('a2-in').value = '8';
-    if (typeof window.resetWedgeCamera === 'function') window.resetWedgeCamera();
-    update();
+    // Full reset: reload the page so all inputs (incl. Patient ID) return to defaults
+    // and the Side modal reappears. Matches the behavior of Reset in glenoid.
+    window.location.reload();
   });
 
   // PDF export
