@@ -292,7 +292,10 @@
 </head>
 <body>
 
-  <a href="index.html" class="back-link">← menu</a>
+  <div style="display: flex; gap: 8px; justify-content: center; margin: 0 auto 16px;">
+    <a href="index.html" class="back-link" style="margin: 0;">← menu</a>
+    <button type="button" onclick="window.location.reload()" class="back-link" style="margin: 0; border: 1px solid #ddd;">Reset</button>
+  </div>
 
   <h1>ShoulderApp - Glenoid Defect Size</h1>
 
@@ -311,7 +314,6 @@
               Select Image
               <input type="file" id="upload" accept="image/*" lang="en" />
             </label>
-            <button id="resetAll" class="upload-btn" type="button">Reset</button>
           </div>
         </div>
       </div>
@@ -1123,7 +1125,7 @@ document.getElementById('resetAll').addEventListener('click', () => {
 });
 </script>
 
-<footer class="copyright-footer">© Sebastian Wangler</footer>
+<footer class="copyright-footer">© Sebastian Wangler v1.0</footer>
 
 </body>
 </html>

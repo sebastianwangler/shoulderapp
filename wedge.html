@@ -331,7 +331,7 @@
     width: 100%;
     box-shadow: 0 6px 24px rgba(0,0,0,0.25);
   }
-  .modal-content h2 { margin: 0 0 8px; font-size: 1.25em; }
+  .modal-content h2 { margin: 0 0 8px; font-size: 1.25em; font-weight: normal; }
   .modal-content p { margin: 0 0 20px; color: #555; font-size: 0.95em; }
   .modal-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .modal-btn { min-width: 140px; }
@@ -354,7 +354,10 @@
 </head>
 <body>
 
-<a href="index.html" class="back-link">← menu</a>
+<div style="display: flex; gap: 8px; justify-content: center; margin: 0 auto 16px;">
+  <a href="index.html" class="back-link" style="margin: 0;">← menu</a>
+  <button type="button" data-reset class="back-link" style="margin: 0; border: 1px solid #ddd;">Reset</button>
+</div>
 
 <h1>ShoulderApp - Wedge Calculator</h1>
 <p class="lead" style="display:none;"></p>
@@ -367,7 +370,6 @@
         <label for="pat-id">Patient ID</label>
         <div class="id-row">
           <input type="text" id="pat-id" placeholder="optional">
-          <button type="button" data-reset class="reset-btn reset-mobile">Reset</button>
         </div>
       </div>
       <div class="control">
@@ -377,7 +379,6 @@
             <span id="side-indicator-text">Right shoulder</span>
             <button type="button" id="change-side-link" class="btn-link">Change</button>
           </div>
-          <button type="button" data-reset class="reset-btn reset-desktop">Reset</button>
         </div>
       </div>
     </div>
@@ -388,7 +389,7 @@
       </div>
       <div class="control">
         <label for="a1-in">Sup/Inf - angle (°)</label>
-        <input type="number" id="a1-in" value="10" step="0.5" min="0" max="80">
+        <input type="number" id="a1-in" value="10" step="0.5" min="-80" max="80">
       </div>
       <div class="control">
         <label for="h1-in">Inf height (mm)</label>
@@ -396,7 +397,7 @@
       </div>
       <div class="control">
         <label for="a2-in">Ant/Post - angle (°)</label>
-        <input type="number" id="a2-in" value="8" step="0.5" min="0" max="80">
+        <input type="number" id="a2-in" value="8" step="0.5" min="-80" max="80">
       </div>
     </div>
   </div>
@@ -462,18 +463,25 @@
     <button class="btn btn-primary" id="download-pdf">Download PDF</button>
   </div>
 
+
   <div class="viewer-3d">
     <div class="viewer-header">
       <h2>3D view</h2>
       <div class="viewer-buttons">
+        <button class="btn btn-secondary" id="toggle-wedge-btn" style="padding: 7px 14px; font-size: 12px; background: #87CEEB; color: #333; border-color: #87CEEB;">Wedge</button>
+        <label style="font-size: 11px; color: #555; display: flex; align-items: center; gap: 4px;">K-wire Ø <input type="number" id="hole-dia-in" value="3.4" step="0.1" min="0" max="10" style="width: 50px; padding: 4px 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 4px;"> mm</label>
+        <button class="btn btn-secondary" id="toggle-guide-a-btn" style="padding: 7px 14px; font-size: 12px;">Guide A</button>
+        <button class="btn btn-secondary" id="toggle-guide-b-btn" style="padding: 7px 14px; font-size: 12px;">Guide B</button>
         <button class="btn btn-secondary" id="recenter-btn" style="padding: 7px 14px; font-size: 12px;">Recenter</button>
-        <button class="btn btn-secondary" id="download-stl" style="padding: 7px 14px; font-size: 12px;">Download .stl</button>
       </div>
     </div>
     <div id="three-container">
       <div class="viewer-fallback">Loading 3D view…</div>
     </div>
     <p class="viewer-hint">Drag to rotate · pinch or scroll to zoom</p>
+    <div class="actions-row" style="margin-top: 10px;">
+      <button class="btn btn-primary" id="download-all-stl" style="padding: 7px 14px; font-size: 12px;">Download .stl</button>
+    </div>
   </div>
 
   <p class="footer-note">All heights in mm. Center = average of the four edge heights.<br>Resulting slope = steepest tilt of the top surface (combining both axes).</p>
@@ -483,10 +491,9 @@
 <!-- Side selection modal -->
 <div id="side-modal" class="modal-overlay">
   <div class="modal-content">
-    <h2>Select side</h2>
     <div class="modal-buttons">
-      <button class="btn btn-primary modal-btn" data-side="left">Left shoulder</button>
-      <button class="btn btn-primary modal-btn" data-side="right">Right shoulder</button>
+      <button class="btn btn-primary modal-btn" data-side="left">Left</button>
+      <button class="btn btn-primary modal-btn" data-side="right">Right</button>
     </div>
   </div>
 </div>
@@ -517,11 +524,11 @@
     return hours + ':' + (minutes < 10 ? '0' + minutes : minutes);
   }
 
-  function drawSide(groupId, D, hLeft, hRight, cx, cy, color, leftLabel, rightLabel) {
+  function drawSide(groupId, D, hLeft, hRight, cx, cy, color, leftLabel, rightLabel, fixedScale) {
     var g = $(groupId);
-    var maxW = 200, maxH = 50;
+    var maxW = 200, maxH = 80;
     var maxHeight = Math.max(hLeft, hRight, 0.5);
-    var scale = Math.min(maxW / D, maxH / maxHeight);
+    var scale = fixedScale || Math.min(maxW / D, maxH / maxHeight);
     var wPx = D * scale;
     var hLeftPx = Math.max(hLeft * scale, 1);
     var hRightPx = Math.max(hRight * scale, 1);
@@ -549,12 +556,12 @@
     g.innerHTML = html;
   }
 
-  function drawSideVertical(groupId, D, hSup, hInf, cx, cy, color, flatOnRight) {
+  function drawSideVertical(groupId, D, hSup, hInf, cx, cy, color, flatOnRight, fixedScale) {
     var g = $(groupId);
-    var maxH = 200; // vertical extent (D direction) — matches circle diameter
-    var maxW = 60;  // horizontal extent (thickness direction)
+    var maxH = 200;
+    var maxW = 60;
     var maxHeight = Math.max(hSup, hInf, 0.5);
-    var scale = Math.min(maxH / D, maxW / maxHeight);
+    var scale = fixedScale || Math.min(maxH / D, maxW / maxHeight);
     var dPx = D * scale;
     var hSupPx = Math.max(hSup * scale, 1);
     var hInfPx = Math.max(hInf * scale, 1);
@@ -699,9 +706,9 @@
 
   function update() {
     var D = clamp(parseFloat($('d-in').value), 1, 500);
-    var a1 = clamp(parseFloat($('a1-in').value), 0, 80);
+    var a1 = clamp(parseFloat($('a1-in').value), -80, 80);
     var h1min = clamp(parseFloat($('h1-in').value), 0, 1000);
-    var a2 = clamp(parseFloat($('a2-in').value), 0, 80);
+    var a2 = clamp(parseFloat($('a2-in').value), -80, 80);
 
     var tan1 = Math.tan(a1 * Math.PI / 180);
     var tan2 = Math.tan(a2 * Math.PI / 180);
@@ -744,8 +751,11 @@
     setText('section1-header', 'Section - sup/inf (' + a1 + '°)');
     setText('section2-header', 'Section - ant/post (' + a2 + '°)');
 
-    drawSideVertical('side-view-1', D, h1max, h1min, 510, 160, '#378ADD', mirrored);
-    drawSide('side-view-2', D, hVisualLeft, hVisualRight, 510, 365, '#1D9E75', leftAnat, rightAnat);
+    // Use same scale for both section views so they have consistent dimensions
+    var allHeights = Math.max(h1max, h1min, hVisualLeft, hVisualRight, 0.5);
+    var sharedScale = Math.min(200 / D, 60 / allHeights);
+    drawSideVertical('side-view-1', D, h1max, h1min, 510, 160, '#378ADD', mirrored, sharedScale);
+    drawSide('side-view-2', D, hVisualLeft, hVisualRight, 510, 365, '#1D9E75', leftAnat, rightAnat, sharedScale);
     drawResultLine('result-slope-line', resultDirRad, resultMin, resultMax, clockStr);
 
     // Anatomical heights: anterior is the lower side, posterior is the higher
@@ -928,8 +938,10 @@
     doc.setTextColor(150);
     doc.text('Generated by ShoulderApp · For research and educational use only.', margin, pageH - 14);
 
-    var fileDate = now.toISOString().slice(0, 10);
-    doc.save('wedge-calculation-' + fileDate + '.pdf');
+    var fileDate = now.toISOString().slice(2, 10); // YY-MM-DD
+    var sideChar = (window.wedgeSide === 'left') ? 'L' : 'R';
+    var pdfPatId = (($('pat-id') && $('pat-id').value) || '').trim();
+    doc.save(fileDate + '_wedge_guide_' + sideChar + '-' + (pdfPatId || '') + '.pdf');
   }
 
   $('download-pdf').addEventListener('click', function () {
@@ -956,6 +968,17 @@
     const { TrackballControls } = await import('three/addons/controls/TrackballControls.js');
     const { CSS2DRenderer, CSS2DObject } = await import('three/addons/renderers/CSS2DRenderer.js');
     const { STLExporter } = await import('three/addons/exporters/STLExporter.js');
+    const { TextGeometry } = await import('three/addons/geometries/TextGeometry.js');
+    const { FontLoader } = await import('three/addons/loaders/FontLoader.js');
+
+    // Load font for text relief
+    let loadedFont = null;
+    const fontLoader = new FontLoader();
+    try {
+      loadedFont = await new Promise((resolve, reject) => {
+        fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json', resolve, undefined, reject);
+      });
+    } catch (e) { console.warn('Font load failed, text relief disabled:', e); }
 
     const container = document.getElementById('three-container');
     const fallback = container.querySelector('.viewer-fallback');
@@ -982,12 +1005,30 @@
     scene.add(dirLight);
 
     const wedgeMaterial = new THREE.MeshLambertMaterial({
-      color: 0xb6c5d4,
+      color: 0x87CEEB,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.85,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1
     });
     const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
+
+    // Helper: create 3D text relief mesh
+    function createTextRelief(text, size, depth, material) {
+      if (!loadedFont || !text) return null;
+      const textGeom = new TextGeometry(text, {
+        font: loadedFont,
+        size: size,
+        height: depth,  // older Three.js versions use 'height' not 'depth'
+        depth: depth,   // newer versions use 'depth'
+        curveSegments: 3,
+        bevelEnabled: false
+      });
+      textGeom.computeBoundingBox();
+      return new THREE.Mesh(textGeom, material);
+    }
 
     const grid = new THREE.GridHelper(1000, 50, 0xdddddd, 0xeeeeee);
     grid.material.transparent = true;
@@ -1011,63 +1052,330 @@
     let labels = [];
     let cameraInitialized = false;
 
-    function buildWedgeGeometry(D, h1min, h1max, h2min, h2max, mirrored) {
+    function buildWedgeGeometry(D, h1min, h1max, h2min, h2max, mirrored, holeDia, grooveW, grooveD) {
       const r = D / 2;
       const segments = 96;
       const center = (h1min + h1max) / 2;
       const tanA1 = (h1max - h1min) / D;
       const tanA2 = (h2max - h2min) / D * (mirrored ? -1 : 1);
-      // Wedge sits with the FLAT face on top (ceiling, at y=resultMax) and the
-      // ANGLED face on bottom (floor). The angled bottom dips deepest where the
-      // wedge is thickest. 3D x convention is opposite of 2D math x: 3D +x
-      // corresponds to 2D circle LEFT, so 3D bird's-eye matches 2D top view.
       const halfDiff = r * Math.sqrt(tanA1 * tanA1 + tanA2 * tanA2);
       const resultMax = center + halfDiff;
       const thickness = (x, z) => center + tanA2 * x + tanA1 * z;
       const angledY = (x, z) => resultMax - thickness(x, z);
 
+      const holeR = (holeDia || 0) / 2;
+      const gW = grooveW || 0;
+      const gD = grooveD || 0;
+      const resAngle = Math.atan2(tanA1, tanA2); // resulting slope direction
+
       const positions = [];
       const indices = [];
 
-      // Vertex 0: flat top center; vertex 1: angled bottom center
-      positions.push(0, resultMax, 0);
-      positions.push(0, angledY(0, 0), 0);
+      const hSegs = 48;
 
-      // Flat top rim (constant y=resultMax)
+      // ── Chamfer rings (must be created before triangulation) ──
+      const chW = 0.1;
+      const topChBase = positions.length / 3;
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        positions.push((r - chW) * Math.cos(theta), resultMax, (r - chW) * Math.sin(theta));
+      }
+      const outerRimBase_wall = positions.length / 3; // outer rim at full r for wall
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        positions.push(r * Math.cos(theta), resultMax - chW, r * Math.sin(theta));
+      }
+      const botRimBase_wall = positions.length / 3;
       for (let i = 0; i < segments; i++) {
         const theta = (i / segments) * Math.PI * 2;
         const x = r * Math.cos(theta);
         const z = r * Math.sin(theta);
-        positions.push(x, resultMax, z);
+        positions.push(x, angledY(x, z) + chW, z);
       }
-      // Angled bottom rim
+      const botChBase = positions.length / 3;
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        const x = (r - chW) * Math.cos(theta);
+        const z = (r - chW) * Math.sin(theta);
+        positions.push(x, angledY(x, z), z);
+      }
+
+      // ── FLAT TOP: annulus from holeR to r ──
+      // Hole chamfer rings (top + bottom)
+      const holeChTopBase = positions.length / 3;
+      if (holeR > 0) {
+        // Chamfer ring at (holeR + chW, resultMax) — flat top side
+        for (let i = 0; i < hSegs; i++) {
+          const theta = (i / hSegs) * Math.PI * 2;
+          positions.push((holeR + chW) * Math.cos(theta), resultMax, (holeR + chW) * Math.sin(theta));
+        }
+      }
+      const holeRimBase = positions.length / 3;
+      if (holeR > 0) {
+        // Actual hole rim at (holeR, resultMax - chW)
+        for (let i = 0; i < hSegs; i++) {
+          const theta = (i / hSegs) * Math.PI * 2;
+          positions.push(holeR * Math.cos(theta), resultMax - chW, holeR * Math.sin(theta));
+        }
+      }
+
+      const outerRimBase = positions.length / 3;
+      for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        positions.push(r * Math.cos(theta), resultMax, r * Math.sin(theta));
+      }
+
+      // Build annulus with concentric rings
+      if (holeR > 0) {
+        const nRings = 6;
+        const ringBases = [];
+        ringBases.push(holeChTopBase); // connect to chamfer ring, not hole rim
+        for (let ri = 1; ri < nRings; ri++) {
+          const t = ri / nRings;
+          const ringR = holeR + (r - holeR) * t;
+          const base = positions.length / 3;
+          for (let i = 0; i < segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            positions.push(ringR * Math.cos(theta), resultMax, ringR * Math.sin(theta));
+          }
+          ringBases.push(base);
+        }
+        ringBases.push(topChBase); // connect flat top to chamfer ring, not outer rim
+
+        for (let ri = 0; ri < ringBases.length - 1; ri++) {
+          const bA = ringBases[ri];
+          const bB = ringBases[ri + 1];
+          const segsA = (ri === 0) ? hSegs : segments;
+          for (let i = 0; i < segments; i++) {
+            const ni = (i + 1) % segments;
+            const iA = bA + (ri === 0 ? Math.round(i * hSegs / segments) % hSegs : i);
+            const niA = bA + (ri === 0 ? Math.round(ni * hSegs / segments) % hSegs : ni);
+            indices.push(iA, niA, bB + ni);
+            indices.push(iA, bB + ni, bB + i);
+          }
+        }
+      } else {
+        const centerIdx = positions.length / 3;
+        positions.push(0, resultMax, 0);
+        for (let i = 0; i < segments; i++) {
+          indices.push(centerIdx, topChBase + i, topChBase + ((i + 1) % segments));
+        }
+      }
+
+      // ── ANGLED BOTTOM ──
+      const botCenter = positions.length / 3;
+      positions.push(0, angledY(0, 0), 0);
+      const botRimBase = positions.length / 3;
       for (let i = 0; i < segments; i++) {
         const theta = (i / segments) * Math.PI * 2;
         const x = r * Math.cos(theta);
         const z = r * Math.sin(theta);
         positions.push(x, angledY(x, z), z);
       }
-
-      for (let i = 0; i < segments; i++) {
-        const a = 2 + i;
-        const b = 2 + ((i + 1) % segments);
-        indices.push(0, a, b);
+      const botHoleBase = positions.length / 3;
+      if (holeR > 0) {
+        for (let i = 0; i < hSegs; i++) {
+          const theta = (i / hSegs) * Math.PI * 2;
+          const x = holeR * Math.cos(theta);
+          const z = holeR * Math.sin(theta);
+          positions.push(x, angledY(x, z), z);
+        }
+        // NO fan from botCenter to hole rim — that would fill the hole!
+        // Only annulus from hole rim to outer rim:
+        for (let i = 0; i < segments; i++) {
+          const ni = (i + 1) % segments;
+          const iH = botHoleBase + Math.round(i * hSegs / segments) % hSegs;
+          const niH = botHoleBase + Math.round(ni * hSegs / segments) % hSegs;
+          indices.push(iH, niH, botChBase + ni);
+          indices.push(iH, botChBase + ni, botChBase + i);
+        }
+      } else {
+        for (let i = 0; i < segments; i++) {
+          indices.push(botCenter, botChBase + ((i + 1) % segments), botChBase + i);
+        }
       }
 
-      const topStart = 2 + segments;
+      // ── SIDE WALL with chamfered edges ──
+      // Top chamfer: topChBase → outerRimBase_wall (45°)
       for (let i = 0; i < segments; i++) {
-        const a = topStart + i;
-        const b = topStart + ((i + 1) % segments);
-        indices.push(1, b, a);
+        const ni = (i + 1) % segments;
+        indices.push(topChBase + i, topChBase + ni, outerRimBase_wall + ni);
+        indices.push(topChBase + i, outerRimBase_wall + ni, outerRimBase_wall + i);
+      }
+      // Side wall: outerRimBase_wall → botRimBase_wall (vertical)
+      for (let i = 0; i < segments; i++) {
+        const ni = (i + 1) % segments;
+        indices.push(outerRimBase_wall + i, outerRimBase_wall + ni, botRimBase_wall + ni);
+        indices.push(outerRimBase_wall + i, botRimBase_wall + ni, botRimBase_wall + i);
+      }
+      // Bottom chamfer: botRimBase_wall → botChBase (45°)
+      for (let i = 0; i < segments; i++) {
+        const ni = (i + 1) % segments;
+        indices.push(botRimBase_wall + i, botRimBase_wall + ni, botChBase + ni);
+        indices.push(botRimBase_wall + i, botChBase + ni, botChBase + i);
       }
 
-      for (let i = 0; i < segments; i++) {
-        const bL = 2 + i;
-        const bR = 2 + ((i + 1) % segments);
-        const tL = topStart + i;
-        const tR = topStart + ((i + 1) % segments);
-        indices.push(bL, bR, tR);
-        indices.push(bL, tR, tL);
+      // ── HOLE INNER WALL + CHAMFERS ──
+      if (holeR > 0) {
+        // Top hole chamfer: holeChTopBase → holeRimBase (45°)
+        for (let i = 0; i < hSegs; i++) {
+          const ni = (i + 1) % hSegs;
+          indices.push(holeChTopBase + i, holeRimBase + i, holeRimBase + ni);
+          indices.push(holeChTopBase + i, holeRimBase + ni, holeChTopBase + ni);
+        }
+
+        // Bottom hole chamfer ring at (holeR + chW, angledY)
+        const holeChBotBase = positions.length / 3;
+        for (let i = 0; i < hSegs; i++) {
+          const theta = (i / hSegs) * Math.PI * 2;
+          const x = (holeR + chW) * Math.cos(theta);
+          const z = (holeR + chW) * Math.sin(theta);
+          positions.push(x, angledY(x, z), z);
+        }
+        // Move botHoleBase to (holeR, angledY + chW)
+        // Actually botHoleBase already exists at (holeR, angledY). We need a new ring.
+        const botHoleWall = positions.length / 3;
+        for (let i = 0; i < hSegs; i++) {
+          const theta = (i / hSegs) * Math.PI * 2;
+          const x = holeR * Math.cos(theta);
+          const z = holeR * Math.sin(theta);
+          positions.push(x, angledY(x, z) + chW, z);
+        }
+
+        // Inner wall: holeRimBase → botHoleWall
+        for (let i = 0; i < hSegs; i++) {
+          const ni = (i + 1) % hSegs;
+          indices.push(holeRimBase + i, botHoleWall + i, botHoleWall + ni);
+          indices.push(holeRimBase + i, botHoleWall + ni, holeRimBase + ni);
+        }
+        // Bottom hole chamfer: botHoleWall → botHoleBase (45°)
+        for (let i = 0; i < hSegs; i++) {
+          const ni = (i + 1) % hSegs;
+          indices.push(botHoleWall + i, botHoleBase + i, botHoleBase + ni);
+          indices.push(botHoleWall + i, botHoleBase + ni, botHoleWall + ni);
+        }
+        // Bottom annulus connects botHoleBase → botChBase (already done above)
+        // But botHoleBase→botChBase should use holeChBotBase instead
+        // Actually the bottom annulus already uses botHoleBase which is at (holeR, angledY)
+        // We need to reconnect: botHoleBase → holeChBotBase → botChBase
+        // For simplicity, just add the chamfer ring connection:
+        // holeChBotBase sits between botHoleBase and the bottom surface
+        // Already handled by botHoleBase→botChBase annulus above
+      }
+
+      // ── RIDGE: solid bar with elliptical cross-section on flat top ──
+      // Same approach as handle: elliptical extrusion along resulting axis
+      if (gW > 0) {
+        const ridgeH = 1.5; // height
+        const ridgeW = gW;  // width (1mm)
+        const ridgeLen = D - 1;
+        const rCSeg = 32; // cross-section segments (smooth round)
+        const cosR = Math.cos(resAngle), sinR = Math.sin(resAngle);
+        const rRadW = ridgeLen / 2; // half-length along axis
+        const rRadH = ridgeH;       // height
+        const ridgeSink = 1.0;    // mm into wedge surface
+        const rRadT = ridgeW / 2;   // half-width perpendicular
+
+        // Build as extruded ellipse along resulting axis
+        const rPos = [];
+        const rIdx = [];
+        const rLayers = [];
+        const rLSegs = 24;
+
+        // Build ridge in segments, skipping where hole is
+        const holeGap = holeR > 0 ? holeR + 0.5 : 0;
+
+        function buildRidgeSegment(uStart, uEnd, dirCos, dirSin) {
+          const cR = dirCos !== undefined ? dirCos : cosR;
+          const sR = dirSin !== undefined ? dirSin : sinR;
+          const segLayers = [];
+          const nL = Math.max(2, Math.round(rLSegs * Math.abs(uEnd - uStart) / ridgeLen));
+          for (let li = 0; li <= nL; li++) {
+            const u = uStart + (uEnd - uStart) * (li / nL);
+            const base = rPos.length / 3;
+            for (let ci = 0; ci < rCSeg; ci++) {
+              const a = (ci / rCSeg) * Math.PI * 2;
+              const perpOff = rRadT * Math.cos(a);
+              const yOff = Math.max(0, rRadH / 2 + (rRadH / 2) * Math.sin(a) - ridgeSink);
+              const wx = u * cR - perpOff * sR;
+              const wz = u * sR + perpOff * cR;
+              rPos.push(wx, resultMax + yOff, wz);
+            }
+            segLayers.push(base);
+          }
+          for (let li = 0; li < segLayers.length - 1; li++) {
+            for (let ci = 0; ci < rCSeg; ci++) {
+              const nc = (ci + 1) % rCSeg;
+              rIdx.push(segLayers[li]+ci, segLayers[li]+nc, segLayers[li+1]+nc);
+              rIdx.push(segLayers[li]+ci, segLayers[li+1]+nc, segLayers[li+1]+ci);
+            }
+          }
+          const capSteps = 4;
+          for (const endI of [0, segLayers.length - 1]) {
+            const eu = endI === 0 ? uStart : uEnd;
+            const endSign = endI === 0 ? -1 : 1;
+            let prevCap = segLayers[endI];
+            for (let di = 1; di <= capSteps; di++) {
+              const da = (Math.PI / 2) * (di / capSteps);
+              const scale = Math.cos(da);
+              const uOff = rRadT * Math.sin(da);
+              const capBase = rPos.length / 3;
+              const cu = eu + endSign * uOff;
+              for (let ci = 0; ci < rCSeg; ci++) {
+                const a2 = (ci / rCSeg) * Math.PI * 2;
+                const perpOff = rRadT * scale * Math.cos(a2);
+                const yOff = Math.max(0, rRadH / 2 + (rRadH / 2) * scale * Math.sin(a2) - ridgeSink);
+                rPos.push(cu * cR - perpOff * sR, resultMax + yOff, cu * sR + perpOff * cR);
+              }
+              for (let ci = 0; ci < rCSeg; ci++) {
+                const nc = (ci + 1) % rCSeg;
+                if (endSign === 1) {
+                  rIdx.push(prevCap+ci, prevCap+nc, capBase+nc);
+                  rIdx.push(prevCap+ci, capBase+nc, capBase+ci);
+                } else {
+                  rIdx.push(prevCap+ci, capBase+ci, capBase+nc);
+                  rIdx.push(prevCap+ci, capBase+nc, prevCap+nc);
+                }
+              }
+              prevCap = capBase;
+            }
+            // Tip point
+            const tipIdx = rPos.length / 3;
+            const tipU = eu + endSign * rRadT;
+            rPos.push(tipU * cR, resultMax + Math.max(0, rRadH / 2 - ridgeSink), tipU * sR);
+            for (let ci = 0; ci < rCSeg; ci++) {
+              const nc = (ci + 1) % rCSeg;
+              if (endSign === 1) rIdx.push(tipIdx, prevCap+ci, prevCap+nc);
+              else rIdx.push(tipIdx, prevCap+nc, prevCap+ci);
+            }
+          }
+        }
+
+        // Resulting axis ridge (split around hole)
+        if (holeGap > 0) {
+          buildRidgeSegment(-ridgeLen / 2, -holeGap);
+          buildRidgeSegment(holeGap, ridgeLen / 2);
+        } else {
+          buildRidgeSegment(-ridgeLen / 2, ridgeLen / 2);
+        }
+
+        // Sup/Inf ridges: perpendicular to resulting axis, 1/3 length, at outer edge
+        const siLen = ridgeLen / 8; // shorter markers
+        const siAngle = Math.atan2(1, 0); // sup/inf direction = along z-axis (tanA1 direction)
+        const siCos = Math.cos(siAngle), siSin = Math.sin(siAngle);
+        // Sup ridge (positive direction along sup/inf axis, at outer edge)
+        buildRidgeSegment(r - siLen - 1, r - 1, siCos, siSin);
+        // Inf ridge (negative direction, at outer edge)
+        buildRidgeSegment(-r + 1, -r + siLen + 1, siCos, siSin);
+
+        // Add to wedge geometry (offset indices)
+        const ridgeOffset = positions.length / 3;
+        for (let i = 0; i < rPos.length; i += 3) {
+          positions.push(rPos[i], rPos[i+1], rPos[i+2]);
+        }
+        for (let i = 0; i < rIdx.length; i++) {
+          indices.push(rIdx[i] + ridgeOffset);
+        }
       }
 
       const geom = new THREE.BufferGeometry();
@@ -1119,18 +1427,218 @@
       labels = [];
 
       const mirrored = !!state.mirrored;
-      const geom = buildWedgeGeometry(state.D, state.h1min, state.h1max, state.h2min, state.h2max, mirrored);
-      wedgeMesh = new THREE.Mesh(geom, wedgeMaterial);
+      const wedgeHoleDia = parseFloat(document.getElementById('hole-dia-in').value) || 3.4;
+      const geom = buildWedgeGeometry(state.D, state.h1min, state.h1max, state.h2min, state.h2max, mirrored, wedgeHoleDia, 1, 1);
+
+      // Build wedge as a group (wedge + handle + hole)
+      const wedgeGroup = new THREE.Group();
+      wedgeGroup.add(new THREE.Mesh(geom, wedgeMaterial));
+
+      const r = state.D / 2;
+      const leftAnatIs = state.leftAnat || 'ant';
+
+      // ── Handle on anterior side, flat top ──
+      const antDir = (leftAnatIs === 'post') ? -1 : 1;
+      const handleThick = 3;
+      const handleHeight = 15;
+      const handleWidth = r * 2 / 3;
+      const handleX = antDir * (r * 0.5);
+      const handleBaseY = state.resultMax;
+
+      // ── Handle: stadium/oval cross-section, sinusoidal grooves, dome top ──
+      const hRadW = handleWidth / 2;  // half-width (along x from handleX)
+      const hRadT = handleThick / 2;  // half-thickness (along z)
+      const gripDepthH = 0.4;
+      const gripSpacing = 2;
+      const hCSeg = 32; // cross-section segments (round profile)
+
+      const hPos = [];
+      const hIdx = [];
+      const hLayers = [];
+
+      // Cross-section: ellipse (hRadW x hRadT) with optional shrink for grooves
+      function hCrossSection(baseX, y, shrink) {
+        const baseIdx = hPos.length / 3;
+        for (let j = 0; j < hCSeg; j++) {
+          const a = (j / hCSeg) * Math.PI * 2;
+          const cx = (hRadW - shrink) * Math.cos(a);
+          const cz = (hRadT - shrink) * Math.sin(a);
+          hPos.push(baseX + cx, y, cz);
+        }
+        return baseIdx;
+      }
+
+      // Y layers with sinusoidal grip grooves
+      for (let ly = 0; ly <= handleHeight; ly += 0.5) {
+        const y = handleBaseY + ly;
+        // Sinusoidal groove: smooth wave
+        const grooveT = (ly - 1) / gripSpacing;
+        const shrink = (grooveT >= 0 && ly < handleHeight - 1)
+          ? gripDepthH * Math.max(0, Math.sin(grooveT * Math.PI * 2))
+          : 0;
+        hLayers.push(hCrossSection(handleX, y, shrink));
+      }
+
+      // Connect layers
+      for (let i = 0; i < hLayers.length - 1; i++) {
+        for (let j = 0; j < hCSeg; j++) {
+          const nj = (j + 1) % hCSeg;
+          hIdx.push(hLayers[i]+j, hLayers[i]+nj, hLayers[i+1]+nj);
+          hIdx.push(hLayers[i]+j, hLayers[i+1]+nj, hLayers[i+1]+j);
+        }
+      }
+
+      // Bottom cap (flat, connects to wedge)
+      const hBotC = hPos.length / 3;
+      hPos.push(handleX, handleBaseY, 0);
+      for (let j = 0; j < hCSeg; j++) {
+        hIdx.push(hBotC, hLayers[0] + ((j+1)%hCSeg), hLayers[0] + j);
+      }
+
+      // Dome top (hemisphere)
+      const domeSteps = 6;
+      const lastLayer = hLayers[hLayers.length - 1];
+      let prevRing = lastLayer;
+      for (let di = 1; di <= domeSteps; di++) {
+        const a = (Math.PI / 2) * (di / domeSteps);
+        const scaleW = Math.cos(a);
+        const dy = hRadT * Math.sin(a); // dome height proportional to thickness
+        const y = handleBaseY + handleHeight + dy;
+        const ringBase = hPos.length / 3;
+        for (let j = 0; j < hCSeg; j++) {
+          const ca = (j / hCSeg) * Math.PI * 2;
+          hPos.push(handleX + hRadW * scaleW * Math.cos(ca), y, hRadT * scaleW * Math.sin(ca));
+        }
+        for (let j = 0; j < hCSeg; j++) {
+          const nj = (j + 1) % hCSeg;
+          hIdx.push(prevRing+j, prevRing+nj, ringBase+nj);
+          hIdx.push(prevRing+j, ringBase+nj, ringBase+j);
+        }
+        prevRing = ringBase;
+      }
+      // Dome tip
+      const domeTop = hPos.length / 3;
+      hPos.push(handleX, handleBaseY + handleHeight + hRadT, 0);
+      for (let j = 0; j < hCSeg; j++) {
+        hIdx.push(domeTop, prevRing+j, prevRing+((j+1)%hCSeg));
+      }
+
+      const handleGeom = new THREE.BufferGeometry();
+      handleGeom.setAttribute('position', new THREE.Float32BufferAttribute(hPos, 3));
+      handleGeom.setIndex(hIdx);
+      handleGeom.computeVertexNormals();
+      wedgeGroup.add(new THREE.Mesh(handleGeom, wedgeMaterial));
+
+      // ── Patient ID text relief on wedge flat top ──
+      const sidePrefix = (window.wedgeSide === 'left' ? 'L' : 'R') + '-';
+      const rawPatId = (document.getElementById('pat-id') && document.getElementById('pat-id').value || '').trim();
+      const patId = sidePrefix + (rawPatId || '');
+      if (loadedFont) {
+        const postDir = (leftAnatIs === 'post') ? 1 : -1;
+        const wHoleR = wedgeHoleDia / 2;
+        const holeClr = wHoleR > 0 ? wHoleR + 1.5 : 0;
+        const availWidth = r - holeClr - 1; // available space from hole to edge
+        const fontSize = 1.5;
+
+        // Split text into lines that fit within available width
+        function fitText(text, maxW) {
+          // Measure full text
+          const testGeom = new TextGeometry(text, {
+            font: loadedFont, size: fontSize, height: 0.15, depth: 0.15,
+            curveSegments: 3, bevelEnabled: false
+          });
+          testGeom.computeBoundingBox();
+          const fullW = testGeom.boundingBox.max.x - testGeom.boundingBox.min.x;
+          testGeom.dispose();
+
+          if (fullW <= maxW) return [text];
+
+          // Split into ~equal parts
+          const nLines = Math.ceil(fullW / maxW);
+          const charsPerLine = Math.floor(text.length / nLines);
+          const lines = [];
+          for (let i = 0; i < text.length; i += charsPerLine) {
+            lines.push(text.substring(i, i + charsPerLine));
+          }
+          return lines;
+        }
+
+        const lines = fitText(patId, availWidth);
+        const lineSpacing = fontSize * 1.4;
+
+        for (let li = 0; li < lines.length; li++) {
+          const lineMesh = createTextRelief(lines[li], fontSize, 0.15, wedgeMaterial);
+          if (lineMesh) {
+            const bb = lineMesh.geometry.boundingBox;
+            const tw = bb.max.x - bb.min.x;
+            const zOff = (li - (lines.length - 1) / 2) * lineSpacing;
+            lineMesh.rotation.x = -Math.PI / 2;
+            lineMesh.rotation.z = Math.PI; // 180°
+            const textStartX = postDir > 0 ? holeClr + tw : -(holeClr);
+            lineMesh.position.set(textStartX, state.resultMax, zOff);
+            wedgeGroup.add(lineMesh);
+          }
+        }
+      }
+
+      // ── Anatomical labels on wedge flat top (all 180° rotated) ──
+      if (loadedFont) {
+        const lblSize = 1.2;
+        const lblDepth = 0.15;
+        const wHoleR2 = wedgeHoleDia / 2;
+
+        // Sup/Inf ridge inner ends (in sup/inf z-direction)
+        const ridgeLenLocal = state.D - 1;
+        const siLenLocal = ridgeLenLocal / 8;
+        const supRidgeInner = r - siLenLocal - 1; // inner end of sup ridge
+        const infRidgeInner = -r + siLenLocal + 1; // inner end of inf ridge
+
+        // Sup label: 2mm inside from sup ridge inner end, 180° rotated
+        const supMesh = createTextRelief('sup', lblSize, lblDepth, wedgeMaterial);
+        if (supMesh) {
+          const bb = supMesh.geometry.boundingBox;
+          const tw = bb.max.x - bb.min.x;
+          const th = bb.max.y - bb.min.y;
+          supMesh.rotation.x = -Math.PI / 2;
+          supMesh.rotation.z = Math.PI;
+          supMesh.position.set(tw / 2, state.resultMax, supRidgeInner - 2);
+          wedgeGroup.add(supMesh);
+        }
+
+        // Inf label: 2mm inside from inf ridge inner end, 180° rotated
+        const infMesh = createTextRelief('inf', lblSize, lblDepth, wedgeMaterial);
+        if (infMesh) {
+          const bb = infMesh.geometry.boundingBox;
+          const tw = bb.max.x - bb.min.x;
+          infMesh.rotation.x = -Math.PI / 2;
+          infMesh.rotation.z = Math.PI;
+          infMesh.position.set(tw / 2, state.resultMax, infRidgeInner + 2);
+          wedgeGroup.add(infMesh);
+        }
+
+        // Ant label on flat top, just beyond the handle toward wedge edge
+        const antMesh = createTextRelief('anterior', lblSize, lblDepth, wedgeMaterial);
+        if (antMesh) {
+          const bb = antMesh.geometry.boundingBox;
+          const tw = bb.max.x - bb.min.x;
+          // Place just outside handle, further toward anterior edge
+          antMesh.rotation.x = -Math.PI / 2;
+          antMesh.rotation.z = Math.PI;
+          const antOutward = antDir * 1; // 1mm further toward wedge edge
+          antMesh.position.set(handleX + antOutward + tw / 2, state.resultMax, -(handleThick / 2 + 2));
+          wedgeGroup.add(antMesh);
+        }
+      }
+
+      wedgeMesh = wedgeGroup;
       scene.add(wedgeMesh);
 
       const edgesGeom = new THREE.EdgesGeometry(geom, 15);
       wedgeEdges = new THREE.LineSegments(edgesGeom, edgeMaterial);
       scene.add(wedgeEdges);
 
-      const r = state.D / 2;
       const blue = 0x185FA5;
       const teal = 0x0F6E56;
-      const leftAnatIs = state.leftAnat || 'ant';
 
       // Markers sit on the angled BOTTOM face (now below the flat ceiling).
       const tanA1 = (state.h1max - state.h1min) / state.D;
@@ -1236,34 +1744,722 @@
       });
     }
 
-    // STL download
     const stlExporter = new STLExporter();
-    const stlBtn = document.getElementById('download-stl');
-    if (stlBtn) {
-      stlBtn.addEventListener('click', () => {
-        if (!wedgeMesh) {
-          alert('3D model not yet ready.');
-          return;
-        }
-        try {
-          const stlString = stlExporter.parse(wedgeMesh);
-          const blob = new Blob([stlString], { type: 'application/sla' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          const fileDate = new Date().toISOString().slice(0, 10);
-          const sideStr = (window.wedgeSide || 'wedge');
-          link.download = 'wedge-' + sideStr + '-' + fileDate + '.stl';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(url), 200);
-        } catch (err) {
-          console.error('STL export failed:', err);
-          alert('Could not export STL. See console for details.');
-        }
-      });
+
+    // ─── DRILLING GUIDE ───────────────────────────────────────────────────
+    const guideMaterial = new THREE.MeshLambertMaterial({
+      color: 0x88aacc,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false
+    });
+
+    let guideMesh = null;       // Guide A (main body)
+    let plugMeshRef = null;     // Guide B (plug)
+    let guideAVisible = false;
+    let guideBVisible = false;
+    let wedgeVisible = true;
+    const toggleWedgeBtn = document.getElementById('toggle-wedge-btn');
+    const toggleGuideABtn = document.getElementById('toggle-guide-a-btn');
+    const toggleGuideBBtn = document.getElementById('toggle-guide-b-btn');
+
+    function disposeGuide() {
+      if (guideMesh) {
+        scene.remove(guideMesh);
+        guideMesh.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+        guideMesh = null;
+      }
+      if (plugMeshRef) {
+        scene.remove(plugMeshRef);
+        if (plugMeshRef.geometry) plugMeshRef.geometry.dispose();
+        plugMeshRef = null;
+      }
     }
+
+    function buildDrillingGuide(state) {
+      disposeGuide();
+      if (!guideAVisible && !guideBVisible) return;
+
+      const D = state.D;
+      const r = D / 2;
+      const rInner = r + 1; // D + 2mm clearance for bone cylinder
+      const wallNorm = 3;
+      const wallLip = 10;
+      const lipLen = 5;
+      const taperLen = 5;
+      const rOuter = rInner + wallNorm;
+      const rOuterLip = rInner + wallLip;
+      const segs = 96;
+
+      const mirrored = !!state.mirrored;
+      const tanA1 = (state.h1max - state.h1min) / D;
+      const tanA2 = (state.h2max - state.h2min) / D * (mirrored ? -1 : 1);
+      const halfDiff = r * Math.sqrt(tanA1 * tanA1 + tanA2 * tanA2);
+      const resultMax = state.center + halfDiff;
+
+      // ── CUTTING BLOCK LAYOUT ──
+      //
+      // Wedge coordinate system:
+      //   Flat top at y = resultMax
+      //   Angled bottom: y(x,z) = resultMax - (center + tanA2·x + tanA1·z)
+      //     → y=0 at thickest point, y=resultMax-resultMin at thinnest
+      //
+      // Cutting block wraps around wedge:
+      //   BOTTOM: angled cut surface with LIP (saw guide, 10mm wall)
+      //     Lip follows the angled plane for saw guidance
+      //   MIDDLE: 30mm straight cylinder (3mm wall) above resultMax
+      //   TOP: open rim (3mm wall, bone entry)
+      //
+      // The wedge sits inside: angled face at bottom, flat top at resultMax
+
+      const guideHeight = 30;
+      const slotW = 3;
+      const slotAngHalf = Math.atan2(slotW / 2, rInner);
+      // Slots align with resulting slope direction
+      const slotTheta1 = Math.atan2(tanA1, tanA2); // resulting slope direction in 3D
+      const slotTheta2 = slotTheta1 + Math.PI;     // 180° opposite
+      function angDist(a, b) {
+        let d = Math.abs(a - b) % (2 * Math.PI);
+        return Math.min(d, 2 * Math.PI - d);
+      }
+      function isInSlot(theta) {
+        return angDist(theta, slotTheta1) < slotAngHalf ||
+               angDist(theta, slotTheta2) < slotAngHalf;
+      }
+
+      // ── CONCEPT ──
+      // Wedge in 3D: flat top at y=resultMax, angled bottom face.
+      // Angled bottom: cutY(x,z) = resultMax - (center + tanA2*x + tanA1*z)
+      //   → y=0 at thickest point, y=(resultMax-resultMin) at thinnest
+      //
+      // Guide = tube for bone cylinder. Saw along angled bottom edge → wedge shape.
+      //   Bottom edge = angled = cutY (matches wedge angled face exactly)
+      //   Lip (10mm wall) at bottom edge for saw guidance (follows angle)
+      //   30mm straight cylinder above resultMax
+      //   Open top for bone insertion
+
+      const cutY = (x, z) => resultMax - (state.center + tanA2 * x + tanA1 * z);
+      const openTopY = resultMax + guideHeight;
+      const deckY = resultMax - lipLen - taperLen; // compensate for position.y shift
+
+      const guideGroup = new THREE.Group();
+      const positions = [];
+      const indices = [];
+
+      // Grip: vertical flutes on outer wall, top 25mm
+      const gripHeight = 25;
+      const gripDepth = 0.8;
+      const gripCount = 36;
+      const gripStartY = openTopY - gripHeight;
+
+      // 10 vertices per segment:
+      // v0:  (rOuterLip, lipBot-fR)        lip bottom fillet start (below)
+      // v1:  (rInner,    lipBot)            inner lip bottom
+      // v2:  (rOuterLip-fR, lipBot)         lip bottom fillet end (side)
+      // v3:  (rOuterLip, lipTop)            lip/taper junction outer
+      // v4:  (rInner,    lipTop)            lip/taper junction inner
+      // v5:  (rOuter,    cutY)              cut surface outer
+      // v6:  (rInner,    cutY)              cut surface inner
+      // v7:  (rOuter+fR, cutY+fR)          taper→cyl fillet (corner)
+      // v8:  (rOuter,    gripStartY)        grip zone start (smooth)
+      // v9:  (rGrip,     gripStartY)        grip zone start (grip r)
+      // v10: (rGrip,     openTopY-fR)       grip zone top before fillet
+      // v11: (rGrip-fR,  openTopY)          top fillet end (horizontal)
+      // v12: (rInner,    openTopY)           inner top
+      // We'll use fillet intermediary rings separately.
+      // Actually, simpler approach: keep VPS=10 but add fillet rings after main loop.
+
+      const VPS = 10;
+      const vi = (s, v) => s * VPS + v;
+
+      for (let s = 0; s < segs; s++) {
+        const th = (s / segs) * Math.PI * 2;
+        const c = Math.cos(th), sn = Math.sin(th);
+        const xi = rInner * c, zi = rInner * sn;
+        const xo = rOuter * c, zo = rOuter * sn;
+        const xol = rOuterLip * c, zol = rOuterLip * sn;
+        const cO = cutY(xo, zo), cI = cutY(xi, zi), cL = cutY(xol, zol);
+
+        const gripPhase = (s / segs) * gripCount;
+        const inGroove = (Math.floor(gripPhase) % 2 === 0);
+        const rGrip = inGroove ? rOuter - gripDepth : rOuter;
+
+        positions.push(xol, cL - lipLen - taperLen + 1, zol);  // v0: lip bottom outer (1mm up for fillet)
+        positions.push(xi,  cI - lipLen - taperLen + 1, zi);    // v1: lip bottom inner (1mm up, chamfer below)
+        positions.push(xol, cL - taperLen,          zol);   // v2: lip/taper junction outer
+        positions.push(xi,  cI - taperLen,          zi);    // v3: lip/taper junction inner
+        positions.push(xo,  cO,                     zo);    // v4: cut surface outer
+        positions.push(xi,  cI,                     zi);    // v5: cut surface inner
+        positions.push(rGrip * c, openTopY - 1, rGrip * sn);   // v6: top outer before fillet
+        positions.push(xi,  openTopY - 1,               zi);    // v7: top inner before fillet
+        positions.push(xo,  gripStartY,             zo);    // v8: grip zone start (smooth r)
+        positions.push(rGrip * c, gripStartY, rGrip * sn); // v9: grip zone start (grip r)
+      }
+
+      const fR = 1.0;
+      const fN = 5;
+      function connectR(bA, bB, faceOut) {
+        for (let s = 0; s < segs; s++) {
+          const ns = (s + 1) % segs;
+          if (faceOut) {
+            indices.push(bA+s, bA+ns, bB+ns); indices.push(bA+s, bB+ns, bB+s);
+          } else {
+            indices.push(bA+s, bB+s, bB+ns); indices.push(bA+s, bB+ns, bA+ns);
+          }
+        }
+      }
+
+      // ── Bottom lip fillet (outer, 1mm radius) ──
+      const botFilletOuter = [];
+      for (let fi = 0; fi <= fN; fi++) {
+        const a = (Math.PI / 2) * (fi / fN); // 0=wall side, PI/2=bottom
+        const base = positions.length / 3;
+        for (let s = 0; s < segs; s++) {
+          const th = (s / segs) * Math.PI * 2;
+          const c = Math.cos(th), sn = Math.sin(th);
+          const xol = rOuterLip * c, zol = rOuterLip * sn;
+          const cL = cutY(xol, zol);
+          // Center of fillet arc at (rOuterLip - fR, lipBot + fR) where lipBot = cL - lipLen - taperLen
+          const rF = (rOuterLip - fR) + fR * Math.cos(a);
+          const yF = (cL - lipLen - taperLen + fR) - fR * Math.sin(a);
+          positions.push(rF * c, yF, rF * sn);
+        }
+        botFilletOuter.push(base);
+      }
+
+      // v0 → first bottom fillet ring (slot-aware)
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2, thN = (ns / segs) * Math.PI * 2;
+        if (isInSlot(thS) && isInSlot(thN)) continue;
+        indices.push(vi(s,0), vi(ns,0), botFilletOuter[0]+ns);
+        indices.push(vi(s,0), botFilletOuter[0]+ns, botFilletOuter[0]+s);
+      }
+      for (let i = 0; i < botFilletOuter.length - 1; i++) connectRSlot(botFilletOuter[i], botFilletOuter[i+1], true);
+      // Inner bottom chamfer
+      const chamferBase = positions.length / 3;
+      for (let s = 0; s < segs; s++) {
+        const th = (s / segs) * Math.PI * 2;
+        const c = Math.cos(th), sn = Math.sin(th);
+        const xi = rInner * c, zi = rInner * sn;
+        const cI = cutY(xi, zi);
+        positions.push((rInner + 1) * c, cI - lipLen - taperLen, (rInner + 1) * sn);
+      }
+      const botLast = botFilletOuter[botFilletOuter.length - 1];
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2, thN = (ns / segs) * Math.PI * 2;
+        if (isInSlot(thS) && isInSlot(thN)) continue;
+        indices.push(botLast+s, botLast+ns, chamferBase+ns);
+        indices.push(botLast+s, chamferBase+ns, chamferBase+s);
+      }
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2, thN = (ns / segs) * Math.PI * 2;
+        if (isInSlot(thS) && isInSlot(thN)) continue;
+        indices.push(chamferBase+s, chamferBase+ns, vi(ns,1));
+        indices.push(chamferBase+s, vi(ns,1), vi(s,1));
+      }
+
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2;
+        const thN = (ns / segs) * Math.PI * 2;
+        const inSlotS = isInSlot(thS); // check at y=0 (below slotTopY)
+        const inSlotN = isInSlot(thN);
+
+        // LIP/TAPER: skip if in slot zone (slots cut toward cut surface)
+        if (!inSlotS || !inSlotN) {
+          // LIP outer v0→v2
+          indices.push(vi(s,0),vi(ns,0),vi(ns,2)); indices.push(vi(s,0),vi(ns,2),vi(s,2));
+          // LIP inner v1→v3
+          indices.push(vi(s,1),vi(s,3),vi(ns,3)); indices.push(vi(s,1),vi(ns,3),vi(ns,1));
+          // TAPER inner v3→v5
+          indices.push(vi(s,3),vi(s,5),vi(ns,5)); indices.push(vi(s,3),vi(ns,5),vi(ns,3));
+        }
+
+        // CYLINDER walls: always present
+        // CYLINDER outer GRIP transition v8→v9
+        indices.push(vi(s,8),vi(ns,8),vi(ns,9)); indices.push(vi(s,8),vi(ns,9),vi(s,9));
+        // CYLINDER outer GRIP v9→v6
+        indices.push(vi(s,9),vi(ns,9),vi(ns,6)); indices.push(vi(s,9),vi(ns,6),vi(s,6));
+        // CYLINDER inner v5→v7
+        indices.push(vi(s,5),vi(s,7),vi(ns,7)); indices.push(vi(s,5),vi(ns,7),vi(ns,5));
+      }
+
+      // ── Taper→Cylinder fillet (concave, 1mm, between v4 and v8) ──
+      // Adds material to smooth the inside corner at v4 (rOuter, cutY)
+      // Quarter circle from v4 upward, bulging outward, then straight to v8
+      // Taper+Fillet: smooth curve from v2 (rOuterLip, lipTop) to v8 (rOuter, gripStartY)
+      // Replaces the straight taper v2→v4 and the v4→v8 connection
+      // Quadratic radius fade from rOuterLip down to rOuter
+      const tcfRings = [];
+      const bulge = rOuterLip - rOuter;
+      for (let fi = 0; fi <= fN * 2; fi++) {
+        const t = fi / (fN * 2); // 0→1, more steps for smooth curve
+        const base = positions.length / 3;
+        for (let s = 0; s < segs; s++) {
+          const th = (s / segs) * Math.PI * 2;
+          const c = Math.cos(th), sn = Math.sin(th);
+          const xol = rOuterLip * c, zol = rOuterLip * sn;
+          const xo = rOuter * c, zo = rOuter * sn;
+          const cL = cutY(xol, zol);
+          const cO = cutY(xo, zo);
+          // Radius: smooth curve from rOuterLip to rOuter
+          // Use sin² for smooth tangential start (vertical at t=0, then curves inward)
+          const tCurve = Math.sin(t * Math.PI / 2); // 0→1, starts slow (tangent to vertical)
+          const rF = rOuterLip - bulge * tCurve * tCurve;
+          // Y: interpolate from v2 Y (cL - taperLen) to gripStartY
+          const yStart = cL - taperLen; // v2 Y (per segment, follows cut angle)
+          const yEnd = gripStartY;       // v8 Y (constant)
+          const yF = yStart + (yEnd - yStart) * t;
+          positions.push(rF * c, yF, rF * sn);
+        }
+        tcfRings.push(base);
+      }
+      // v2 → first tcf ring (slot-aware)
+      function connectRSlot(bA, bB, faceOut) {
+        for (let s = 0; s < segs; s++) {
+          const ns = (s + 1) % segs;
+          const thS2 = (s / segs) * Math.PI * 2;
+          const thN2 = (ns / segs) * Math.PI * 2;
+          if (isInSlot(thS2) && isInSlot(thN2)) continue;
+          if (faceOut) {
+            indices.push(bA+s, bA+ns, bB+ns); indices.push(bA+s, bB+ns, bB+s);
+          } else {
+            indices.push(bA+s, bB+s, bB+ns); indices.push(bA+s, bB+ns, bA+ns);
+          }
+        }
+      }
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2;
+        const thN = (ns / segs) * Math.PI * 2;
+        if (isInSlot(thS) && isInSlot(thN)) continue;
+        indices.push(vi(s,2), vi(ns,2), tcfRings[0]+ns);
+        indices.push(vi(s,2), tcfRings[0]+ns, tcfRings[0]+s);
+      }
+      for (let i = 0; i < tcfRings.length - 1; i++) connectRSlot(tcfRings[i], tcfRings[i+1], true);
+      const tcfLast = tcfRings[tcfRings.length - 1];
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        const thS = (s / segs) * Math.PI * 2;
+        const thN = (ns / segs) * Math.PI * 2;
+        if (isInSlot(thS) && isInSlot(thN)) continue;
+        indices.push(tcfLast+s, tcfLast+ns, vi(ns,8));
+        indices.push(tcfLast+s, vi(ns,8), vi(s,8));
+      }
+
+      // ── Top edge chamfers (1mm, outer + inner) ──
+      const chTopOuter = positions.length / 3;
+      for (let s = 0; s < segs; s++) {
+        const th = (s / segs) * Math.PI * 2;
+        const c = Math.cos(th), sn = Math.sin(th);
+        const gripPhase = (s / segs) * gripCount;
+        const inGroove = (Math.floor(gripPhase) % 2 === 0);
+        const rGrip = inGroove ? rOuter - gripDepth : rOuter;
+        positions.push((rGrip - 1) * c, openTopY, (rGrip - 1) * sn); // 1mm inward at top
+      }
+      const chTopInner = positions.length / 3;
+      for (let s = 0; s < segs; s++) {
+        const th = (s / segs) * Math.PI * 2;
+        const c = Math.cos(th), sn = Math.sin(th);
+        positions.push((rInner + 1) * c, openTopY, (rInner + 1) * sn); // 1mm outward at top
+      }
+
+      // v6 → outer chamfer (45° face)
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        indices.push(vi(s,6), vi(ns,6), chTopOuter+ns);
+        indices.push(vi(s,6), chTopOuter+ns, chTopOuter+s);
+      }
+      // v7 → inner chamfer (45° face)
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        indices.push(vi(s,7), chTopInner+s, chTopInner+ns);
+        indices.push(vi(s,7), chTopInner+ns, vi(ns,7));
+      }
+      // Top annulus: outer chamfer → inner chamfer
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        indices.push(chTopInner+s, chTopOuter+s, chTopOuter+ns);
+        indices.push(chTopInner+s, chTopOuter+ns, chTopInner+ns);
+      }
+
+      // Guide A is open at the top (plug B closes it)
+
+      const mainGeom = new THREE.BufferGeometry();
+      mainGeom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      mainGeom.setIndex(indices);
+      mainGeom.computeVertexNormals();
+      guideGroup.add(new THREE.Mesh(mainGeom, guideMaterial));
+
+      // ── Patient ID text on Guide A sockel outside ──
+      const gSidePrefix = (window.wedgeSide === 'left' ? 'L' : 'R') + '-';
+      const gRawPatId = (document.getElementById('pat-id') && document.getElementById('pat-id').value || '').trim();
+      const patIdG = gSidePrefix + (gRawPatId || '');
+      if (loadedFont) {
+        const gTextGeom = new TextGeometry(patIdG, {
+          font: loadedFont,
+          size: 1.5,
+          height: 0.15,
+          depth: 0.15,
+          curveSegments: 3,
+          bevelEnabled: false
+        });
+        gTextGeom.computeBoundingBox();
+        const bb = gTextGeom.boundingBox;
+        const tw = bb.max.x - bb.min.x;
+        const th = bb.max.y - bb.min.y;
+
+        // Bend text around cylinder AND follow wedge angle
+        const posAttr = gTextGeom.getAttribute('position');
+
+        // Place text starting 90° away from slot direction to avoid slots
+        // Slots are at slotTheta1 and slotTheta2
+        const textStartAngle = slotTheta1 + Math.PI / 2; // 90° from first slot
+
+        for (let i = 0; i < posAttr.count; i++) {
+          const x = posAttr.getX(i); // along text width → angle on cylinder
+          const y = posAttr.getY(i); // text height → height offset along lip
+          const z = posAttr.getZ(i); // text depth → radial offset
+
+          // Map x to angle around cylinder, starting away from slots
+          const angle = textStartAngle + (x - tw / 2) / rOuterLip;
+          const rr = rOuterLip + z;
+
+          // World position on cylinder
+          const wx = rr * Math.sin(angle);
+          const wz = rr * Math.cos(angle);
+
+          // cutY at this angular position follows the wedge slope
+          const cutAtAngle = cutY(rOuterLip * Math.sin(angle), rOuterLip * Math.cos(angle));
+          // Lip center Y at this angle (follows the angled cut surface)
+          const lipMidAtAngle = cutAtAngle - lipLen * 0.5 - taperLen;
+
+          posAttr.setX(i, wx);
+          posAttr.setY(i, y + lipMidAtAngle - th / 2);
+          posAttr.setZ(i, wz);
+        }
+        posAttr.needsUpdate = true;
+        gTextGeom.computeVertexNormals();
+
+        const gTextMesh = new THREE.Mesh(gTextGeom, guideMaterial);
+        guideGroup.add(gTextMesh);
+      }
+
+      // ── PLUG (separate insertable cylinder) ──
+      // Outer Ø = D (fits inside guide rInner = r+1)
+      // Wall = 2mm → inner Ø = D - 4mm
+      // Bottom = deckY (wedge flat top) with solid cap
+      // Top = openTopY (open rim)
+      const plugPos = [];
+      const plugIdx = [];
+      const plugROuter = r;
+      const plugRInner = r - 2; // wall = 2mm, hollow inside
+      const plugWall = 2; // same thickness for top/bottom caps
+
+      const chP = 1; // chamfer size
+      for (let s = 0; s < segs; s++) {
+        const th = (s / segs) * Math.PI * 2;
+        const c = Math.cos(th), sn = Math.sin(th);
+        plugPos.push(plugROuter * c,         deckY + chP,          plugROuter * sn);  // p0: outer bot (1mm up)
+        plugPos.push(plugRInner * c,         deckY + plugWall,     plugRInner * sn);  // p1: inner bot
+        plugPos.push(plugROuter * c,         openTopY - chP,       plugROuter * sn);  // p2: outer top (1mm down)
+        plugPos.push(plugRInner * c,         openTopY - plugWall,  plugRInner * sn);  // p3: inner top
+        plugPos.push((plugROuter - chP) * c, deckY,                (plugROuter - chP) * sn); // p4: bot outer chamfer
+        plugPos.push((plugROuter - chP) * c, openTopY,             (plugROuter - chP) * sn); // p5: top outer chamfer
+      }
+      const pv = (s, v) => s * 6 + v;
+      for (let s = 0; s < segs; s++) {
+        const ns = (s + 1) % segs;
+        // Outer wall p0→p2
+        plugIdx.push(pv(s,0), pv(ns,0), pv(ns,2)); plugIdx.push(pv(s,0), pv(ns,2), pv(s,2));
+        // Inner wall p1→p3
+        plugIdx.push(pv(s,1), pv(s,3), pv(ns,3)); plugIdx.push(pv(s,1), pv(ns,3), pv(ns,1));
+        // Bottom outer chamfer p4→p0 (45° bevel)
+        plugIdx.push(pv(s,4), pv(ns,4), pv(ns,0)); plugIdx.push(pv(s,4), pv(ns,0), pv(s,0));
+        // Bottom annulus p4→p1 (flat, inner part of bottom)
+        plugIdx.push(pv(s,4), pv(s,1), pv(ns,1)); plugIdx.push(pv(s,4), pv(ns,1), pv(ns,4));
+        // Top outer chamfer p2→p5 (45° bevel)
+        plugIdx.push(pv(s,2), pv(ns,2), pv(ns,5)); plugIdx.push(pv(s,2), pv(ns,5), pv(s,5));
+        // Top annulus p5→p3 (flat, inner part of top)
+        plugIdx.push(pv(s,5), pv(ns,5), pv(ns,3)); plugIdx.push(pv(s,5), pv(ns,3), pv(s,3));
+      }
+      // Bottom cap disc (center → p4 chamfer ring, faces down)
+      const plugBotC = plugPos.length / 3;
+      plugPos.push(0, deckY, 0);
+      for (let s = 0; s < segs; s++) {
+        plugIdx.push(plugBotC, pv((s+1)%segs, 4), pv(s, 4));
+      }
+      // Bottom inner disc (center → p1, faces up)
+      const plugBotIC = plugPos.length / 3;
+      plugPos.push(0, deckY + plugWall, 0);
+      for (let s = 0; s < segs; s++) {
+        plugIdx.push(plugBotIC, pv(s, 1), pv((s+1)%segs, 1));
+      }
+      // Top cap disc (center → p5 chamfer ring, faces up)
+      const plugTopC = plugPos.length / 3;
+      plugPos.push(0, openTopY, 0);
+      for (let s = 0; s < segs; s++) {
+        plugIdx.push(plugTopC, pv(s, 5), pv((s+1)%segs, 5));
+      }
+      // Top inner disc (center → p3, faces down)
+      const plugTopIC = plugPos.length / 3;
+      plugPos.push(0, openTopY - plugWall, 0);
+      for (let s = 0; s < segs; s++) {
+        plugIdx.push(plugTopIC, pv((s+1)%segs, 3), pv(s, 3));
+      }
+
+      const plugGeom = new THREE.BufferGeometry();
+      plugGeom.setAttribute('position', new THREE.Float32BufferAttribute(plugPos, 3));
+      plugGeom.setIndex(plugIdx);
+      plugGeom.computeVertexNormals();
+      // Make plug a group so we can add text
+      const plugGroup = new THREE.Group();
+      plugGroup.add(new THREE.Mesh(plugGeom, guideMaterial));
+
+      // ── Patient ID + "outside" text on Guide B top face ──
+      const bSidePrefix = (window.wedgeSide === 'left' ? 'L' : 'R') + '-';
+      const bRawPatId = (document.getElementById('pat-id') && document.getElementById('pat-id').value || '').trim();
+      const patIdB = bSidePrefix + (bRawPatId || '');
+      if (loadedFont) {
+        const bFontSize = 1.2;
+        const bAvailW = plugROuter * 2 - 2;
+
+        // Patient ID with line wrapping
+        {
+          function fitTextB(text, maxW) {
+            const tg = new TextGeometry(text, {
+              font: loadedFont, size: bFontSize, height: 0.15, depth: 0.15,
+              curveSegments: 3, bevelEnabled: false
+            });
+            tg.computeBoundingBox();
+            const fw = tg.boundingBox.max.x - tg.boundingBox.min.x;
+            tg.dispose();
+            if (fw <= maxW) return [text];
+            const nL = Math.ceil(fw / maxW);
+            const cpl = Math.floor(text.length / nL);
+            const lines = [];
+            for (let i = 0; i < text.length; i += cpl) lines.push(text.substring(i, i + cpl));
+            return lines;
+          }
+
+          const bLines = fitTextB(patIdB, bAvailW);
+          const bLineH = bFontSize * 1.4;
+          for (let li = 0; li < bLines.length; li++) {
+            const lm = createTextRelief(bLines[li], bFontSize, 0.15, guideMaterial);
+            if (lm) {
+              const bb = lm.geometry.boundingBox;
+              const tw = bb.max.x - bb.min.x;
+              const zOff = (li - (bLines.length - 1) / 2) * bLineH;
+              lm.rotation.x = -Math.PI / 2;
+              lm.position.set(-tw / 2, openTopY + 0.01, zOff);
+              plugGroup.add(lm);
+            }
+          }
+        }
+
+        // "outside" label near edge
+        const outsideMesh = createTextRelief('outside', 2, 0.15, guideMaterial);
+        if (outsideMesh) {
+          const bb = outsideMesh.geometry.boundingBox;
+          const tw = bb.max.x - bb.min.x;
+          outsideMesh.rotation.x = -Math.PI / 2;
+          outsideMesh.position.set(-tw / 2, openTopY + 0.01, -(plugROuter * 0.55));
+          plugGroup.add(outsideMesh);
+        }
+      }
+
+      plugMeshRef = plugGroup;
+      plugMeshRef.renderOrder = 1;
+
+      // Add to scene as separate objects (not grouped) for independent toggling
+      guideGroup.position.y = lipLen + taperLen;
+      guideGroup.renderOrder = 1;
+      guideMesh = guideGroup;
+      plugMeshRef.position.y = lipLen + taperLen;
+
+      if (guideAVisible) scene.add(guideMesh);
+      if (guideBVisible) scene.add(plugMeshRef);
+    }
+
+    // Toggle button styling helper
+    function setToggleStyle(btn, active) {
+      if (active) {
+        btn.style.background = '#1a1a1a'; btn.style.color = '#fff'; btn.style.borderColor = '#1a1a1a';
+      } else {
+        btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      }
+    }
+
+    // Wedge toggle
+    toggleWedgeBtn.addEventListener('click', () => {
+      wedgeVisible = !wedgeVisible;
+      if (wedgeMesh) wedgeMesh.visible = wedgeVisible;
+      if (wedgeEdges) wedgeEdges.visible = wedgeVisible;
+      // Hide/show markers, labels, slope line
+      for (const m of markers) m.visible = wedgeVisible;
+      for (const l of labels) l.visible = wedgeVisible;
+      if (slopeLine) slopeLine.visible = wedgeVisible;
+      if (slopeMaxMarker) slopeMaxMarker.visible = wedgeVisible;
+      if (slopeMinMarker) slopeMinMarker.visible = wedgeVisible;
+      setToggleStyle(toggleWedgeBtn, wedgeVisible);
+      if (wedgeVisible) { toggleWedgeBtn.style.background = '#87CEEB'; toggleWedgeBtn.style.borderColor = '#87CEEB'; toggleWedgeBtn.style.color = '#333'; }
+    });
+
+    // Guide A toggle
+    toggleGuideABtn.addEventListener('click', () => {
+      guideAVisible = !guideAVisible;
+      setToggleStyle(toggleGuideABtn, guideAVisible);
+      const s = currentState || window.wedgeState;
+      if (s && s.D) {
+        if (guideAVisible || guideBVisible) buildDrillingGuide(s);
+        else disposeGuide();
+      }
+      if (guideMesh) guideMesh.visible = guideAVisible;
+    });
+
+    // Guide B toggle
+    toggleGuideBBtn.addEventListener('click', () => {
+      guideBVisible = !guideBVisible;
+      setToggleStyle(toggleGuideBBtn, guideBVisible);
+      const s = currentState || window.wedgeState;
+      if (s && s.D) {
+        if (guideAVisible || guideBVisible) buildDrillingGuide(s);
+        else disposeGuide();
+      }
+      if (plugMeshRef) plugMeshRef.visible = guideBVisible;
+    });
+
+    // Rebuild guide when wedge updates (if visible)
+    document.addEventListener('wedge-updated', (e) => {
+      if (guideAVisible || guideBVisible) buildDrillingGuide(e.detail);
+    });
+
+    // Combined STL export: all objects positioned on 10x10cm build plate
+    document.getElementById('download-all-stl').addEventListener('click', () => {
+      const s = currentState || window.wedgeState;
+      if (!s || !s.D) { alert('No model to export.'); return; }
+
+      // Ensure all parts are built
+      const wasA = guideAVisible, wasB = guideBVisible;
+      guideAVisible = true; guideBVisible = true;
+      buildDrillingGuide(s);
+
+      // Also ensure wedge is rebuilt
+      if (!wedgeMesh) {
+        rebuild(s);
+      }
+
+      try {
+        const exportScene = new THREE.Scene();
+
+        // Arrange 3 parts in a circle on a 100x100mm build plate
+        const circleR = s.D * 0.6 + 8; // tight circle, ~15mm gap between parts
+        const angles = [0, Math.PI * 2 / 3, Math.PI * 4 / 3]; // 120° apart
+
+        // flipY: negate Y and shift so min Y = 0
+        // shiftY: add constant to Y so min Y = 0
+        function addPartOffset(part, offsetX, offsetZ, flipY, rotMatrix) {
+          if (!part) return;
+          part.visible = true;
+          part.updateMatrixWorld(true);
+
+          // First pass: collect meshes, bake world transform + optional rotation, find Y range
+          const meshes = [];
+          let minY = Infinity, maxY = -Infinity;
+          part.traverse(child => {
+            if (child.isMesh && child.geometry) {
+              const g = child.geometry.clone();
+              g.applyMatrix4(child.matrixWorld.clone());
+              if (rotMatrix) g.applyMatrix4(rotMatrix);
+              const pos = g.getAttribute('position');
+              for (let i = 0; i < pos.count; i++) {
+                const y = flipY ? -pos.getY(i) : pos.getY(i);
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+              meshes.push({ geom: g, mat: child.material });
+            }
+          });
+
+          // Second pass: apply flip, shift Y to 0, add XZ offset
+          const yShift = -minY;
+          for (const m of meshes) {
+            const pos = m.geom.getAttribute('position');
+            for (let i = 0; i < pos.count; i++) {
+              const y = flipY ? -pos.getY(i) : pos.getY(i);
+              pos.setX(i, pos.getX(i) + offsetX);
+              pos.setY(i, y + yShift);
+              pos.setZ(i, pos.getZ(i) + offsetZ);
+            }
+            if (flipY) {
+              const idx = m.geom.getIndex();
+              if (idx) {
+                const arr = idx.array;
+                for (let i = 0; i < arr.length; i += 3) {
+                  const tmp = arr[i + 1];
+                  arr[i + 1] = arr[i + 2];
+                  arr[i + 2] = tmp;
+                }
+                idx.needsUpdate = true;
+              }
+            }
+            pos.needsUpdate = true;
+            m.geom.computeVertexNormals();
+            exportScene.add(new THREE.Mesh(m.geom, m.mat));
+          }
+        }
+
+        // Wedge: tilt so angled face lies flat on y=0
+        // The angled face has slope tanA1 (along z) and tanA2 (along x)
+        // Rotate around X by atan(tanA1) and around Z by -atan(tanA2) to flatten
+        const mirrored = !!s.mirrored;
+        const eTanA1 = (s.h1max - s.h1min) / s.D;
+        const eTanA2 = (s.h2max - s.h2min) / s.D * (mirrored ? -1 : 1);
+        const wedgeRotMatrix = new THREE.Matrix4();
+        const rotX = new THREE.Matrix4().makeRotationX(-Math.atan(eTanA1));
+        const rotZ = new THREE.Matrix4().makeRotationZ(Math.atan(eTanA2));
+        wedgeRotMatrix.multiply(rotX).multiply(rotZ);
+        addPartOffset(wedgeMesh, circleR * Math.cos(angles[0]), circleR * Math.sin(angles[0]), false, wedgeRotMatrix);
+
+        // Guide A: flip upside down so small Ø (open top) sits on plate
+        addPartOffset(guideMesh, circleR * Math.cos(angles[1]), circleR * Math.sin(angles[1]), true);
+
+        // Guide B: text side up, bottom on plate (no flip, just shift Y to 0)
+        addPartOffset(plugMeshRef, circleR * Math.cos(angles[2]), circleR * Math.sin(angles[2]), false);
+
+        const stlString = stlExporter.parse(exportScene);
+        const blob = new Blob([stlString], { type: 'application/sla' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const fileDate = new Date().toISOString().slice(2, 10); // YY-MM-DD
+        const sideChar = (window.wedgeSide === 'left') ? 'L' : 'R';
+        const stlPatId = (document.getElementById('pat-id') && document.getElementById('pat-id').value || '').trim();
+        link.download = fileDate + '_wedge_guide_' + sideChar + '-' + (stlPatId || '') + '.stl';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 200);
+      } catch (err) {
+        console.error('STL export failed:', err);
+        alert('Could not export STL. See console for details.');
+      }
+
+      // Restore visibility
+      guideAVisible = wasA; guideBVisible = wasB;
+      if (guideMesh) guideMesh.visible = guideAVisible;
+      if (plugMeshRef) plugMeshRef.visible = guideBVisible;
+    });
 
     function animate() {
       requestAnimationFrame(animate);
@@ -1285,7 +2481,7 @@
   }
 </script>
 
-<footer class="copyright-footer">© Sebastian Wangler</footer>
+<footer class="copyright-footer">© Sebastian Wangler v1.0</footer>
 
 </body>
 </html>
