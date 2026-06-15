@@ -2575,8 +2575,10 @@
       var cosAngAB = (distA * distA + distB * distB - distAB * distAB) / (2 * distA * distB);
       cosAngAB = Math.max(-1, Math.min(1, cosAngAB)); // clamp
       var angBetween = Math.acos(cosAngAB);
-      // Place Guide A and B symmetrically below wedge (clockwise and counterclockwise)
-      var angCenter = Math.PI; // both guides go "below" the wedge (180° = negative X)
+      // Place Guide A and B on the side OPPOSITE the wedge handle to prevent overlap.
+      // Handle direction in X: antDir = (leftAnat==='post') ? -1 : 1  (handle extends in +antDir)
+      var antDirG = (state.leftAnat === 'post') ? -1 : 1;
+      var angCenter = (antDirG > 0) ? Math.PI : 0; // guides go in -antDir X direction
       var ang1 = angCenter - angBetween / 2; // Guide A: clockwise from center
       var ang2 = angCenter + angBetween / 2; // Guide B: counterclockwise
       var circR = distA; // Guide A distance
@@ -2643,6 +2645,15 @@
       }
     }
 
+    // Rebuild supports so they match the currently visible part set.
+    // Important: do NOT pre-remove supportPreviewGroup — the chk-supports change
+    // handler relies on its presence to first drop parts back to unlifted Y
+    // before regenerating supports (otherwise parts get lifted twice).
+    function rebuildSupportsIfActive() {
+      if (!document.getElementById('chk-supports').checked) return;
+      document.getElementById('chk-supports').dispatchEvent(new Event('change'));
+    }
+
     // Wedge toggle
     toggleWedgeBtn.addEventListener('click', () => {
       wedgeVisible = !wedgeVisible;
@@ -2656,6 +2667,7 @@
       if (slopeMinMarker) slopeMinMarker.visible = wedgeVisible;
       setToggleStyle(toggleWedgeBtn, wedgeVisible);
       if (wedgeVisible) { toggleWedgeBtn.style.background = '#87CEEB'; toggleWedgeBtn.style.borderColor = '#87CEEB'; toggleWedgeBtn.style.color = '#333'; }
+      rebuildSupportsIfActive();
     });
 
     // Apply support lift offset to guides if supports are active
@@ -2677,6 +2689,7 @@
       }
       applySupportLift();
       if (guideMesh) guideMesh.visible = guideAVisible;
+      rebuildSupportsIfActive();
     });
 
     // Guide B toggle
@@ -2690,6 +2703,7 @@
       }
       applySupportLift();
       if (plugMeshRef) plugMeshRef.visible = guideBVisible;
+      rebuildSupportsIfActive();
     });
 
     // Rebuild guide when wedge updates (if visible)
@@ -2818,15 +2832,13 @@
       if (!document.getElementById('chk-supports').checked) return;
       const s = currentState || window.wedgeState;
       if (!s || !s.D) return;
+      if (!wedgeVisible && !guideAVisible && !guideBVisible) return; // nothing visible to support
 
       // Manual supports: pillars under wedge angled bottom + handle
       if (!wedgeMesh) rebuild(s);
-      // Ensure guides are built (needed for raycasting support heights)
-      if (!guideMesh || !plugMeshRef) {
-        const wasA = guideAVisible, wasB = guideBVisible;
-        guideAVisible = true; guideBVisible = true;
+      // Build guides only if at least one is visible (needed for raycasting support heights)
+      if ((guideAVisible || guideBVisible) && (!guideMesh || !plugMeshRef)) {
         buildDrillingGuide(s);
-        guideAVisible = wasA; guideBVisible = wasB;
       }
       supportPreviewGroup = new THREE.Group();
 
@@ -2848,15 +2860,17 @@
       // ~25 supports: outer ring (16) + inner ring (6) + center (1) + 2 extra
       const supportPoints = [];
 
-      // Outer ring: 16 supports along the circle edge
-      for (let i = 0; i < 16; i++) {
-        const a = (i / 16) * Math.PI * 2;
-        supportPoints.push({ x: (rW - 1) * Math.cos(a), z: (rW - 1) * Math.sin(a) });
-      }
-      // Inner ring: 6 supports at half radius
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 + Math.PI / 6; // offset 30°
-        supportPoints.push({ x: (rW * 0.5) * Math.cos(a), z: (rW * 0.5) * Math.sin(a) });
+      if (wedgeVisible) {
+        // Outer ring: 16 supports along the circle edge
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2;
+          supportPoints.push({ x: (rW - 1) * Math.cos(a), z: (rW - 1) * Math.sin(a) });
+        }
+        // Inner ring: 6 supports at half radius
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + Math.PI / 6; // offset 30°
+          supportPoints.push({ x: (rW * 0.5) * Math.cos(a), z: (rW * 0.5) * Math.sin(a) });
+        }
       }
       // No center support (hole is there)
 
@@ -2904,10 +2918,10 @@
       const midX = hx3 + antDir3 * halfLen * Math.sin(tiltAnt);
       const midY = resMax + halfLen * Math.cos(tiltAnt) * Math.cos(tiltSup);
       const midZ = halfLen * Math.sin(tiltSup);
-      const handleSupports = [
+      const handleSupports = wedgeVisible ? [
         { x: tipX + antDir3 * hRadW2, z: tipZ, y: tipY, dir: antDir3 },       // at dome tip
         { x: midX + antDir3 * hRadW2, z: midZ, y: midY, dir: antDir3 }        // at half height
-      ];
+      ] : [];
       for (const hs of handleSupports) {
         const supTopY = hs.y;
         const pH = supTopY + liftH - cTipH;
@@ -2942,7 +2956,9 @@
       let sCosAB = (sDistA * sDistA + sDistB * sDistB - sDistAB * sDistAB) / (2 * sDistA * sDistB);
       sCosAB = Math.max(-1, Math.min(1, sCosAB));
       const sAngBetween = Math.acos(sCosAB);
-      const sAngCenter = Math.PI;
+      // Mirror the placement chosen in buildDrillingGuide so support rings land under the guides
+      const sAntDirG = (s.leftAnat === 'post') ? -1 : 1;
+      const sAngCenter = (sAntDirG > 0) ? Math.PI : 0;
       const sAng1 = sAngCenter - sAngBetween / 2; // Guide A
       const sAng2 = sAngCenter + sAngBetween / 2; // Guide B
       const guideACX = sDistA * Math.cos(sAng1);
@@ -2955,12 +2971,12 @@
       if (guideMesh && !guideAWasInScene) scene.add(guideMesh);
       if (guideMesh) guideMesh.updateMatrixWorld(true);
 
-      const guideARings = [
+      const guideARings = guideAVisible ? [
         { r: rOuterLipA, n: 18, offset: 0, angled: true },                  // outermost ring (at lip edge)
         { r: rOuterLipA - 2, n: 16, offset: Math.PI / 16, angled: true },   // outer ring (lip inset)
         { r: (rOuterLipA + rInnerA) / 2, n: 10, offset: Math.PI / 10, angled: true }, // mid ring
         { r: rInnerA + (rOuterLipA - rInnerA) / 4, n: 12, offset: Math.PI / 12, angled: false } // inner ring
-      ];
+      ] : [];
       const guideAPillars = []; // collect for bracing
       for (const ring of guideARings) {
         for (let i = 0; i < ring.n; i++) {
@@ -3097,11 +3113,11 @@
       // ── Guide B supports: outer ring (14) + inner ring (7) under the bottom face ──
       const guideBCX = sDistB * Math.cos(sAng2);
       const guideBCZ = sDistB * Math.sin(sAng2);
-      const guideBRings = [
+      const guideBRings = guideBVisible ? [
         { r: rW - 2, n: 14, offset: 0 },            // outer ring
         { r: rW * 0.5, n: 7, offset: Math.PI / 7 }, // inner ring, rotated to stagger
         { r: 0, n: 1, offset: 0 }                    // center
-      ];
+      ] : [];
       for (const ring of guideBRings) {
         for (let i = 0; i < ring.n; i++) {
           const a = (i / ring.n) * Math.PI * 2 + ring.offset;
@@ -3129,14 +3145,17 @@
 
       // ── Organic raft: 5mm offset from part circles + handle ──
       const raftPad = 5;
-      // Define part circles (center + radius)
-      const partCircles = [
-        { cx: 0, cz: 0, r: rW },                         // wedge
-        { cx: guideACX, cz: guideACZ, r: rOuterLipA },    // Guide A (lip)
-        { cx: guideBCX, cz: guideBCZ, r: rW },            // Guide B
-        { cx: handleSupports[0].x, cz: handleSupports[0].z, r: 2 },  // handle at tip
-        { cx: handleSupports[1].x, cz: handleSupports[1].z, r: 2 }  // handle at mid
-      ];
+      // Define part circles (center + radius) — only for visible parts
+      const partCircles = [];
+      if (wedgeVisible) {
+        partCircles.push({ cx: 0, cz: 0, r: rW });                   // wedge
+        if (handleSupports.length >= 2) {
+          partCircles.push({ cx: handleSupports[0].x, cz: handleSupports[0].z, r: 2 }); // handle tip
+          partCircles.push({ cx: handleSupports[1].x, cz: handleSupports[1].z, r: 2 }); // handle mid
+        }
+      }
+      if (guideAVisible) partCircles.push({ cx: guideACX, cz: guideACZ, r: rOuterLipA });
+      if (guideBVisible) partCircles.push({ cx: guideBCX, cz: guideBCZ, r: rW });
 
       // Distance from point to nearest circle edge
       function distToCircles(px, pz) {
@@ -3309,28 +3328,20 @@
       const s = currentState || window.wedgeState;
       if (!s || !s.D) { alert('No model to export.'); return; }
 
-      // Ensure all parts and supports are built
-      if (!wedgeMesh) rebuild(s);
-      const wasA = guideAVisible, wasB = guideBVisible;
-      if (!guideMesh || !plugMeshRef) {
-        guideAVisible = true; guideBVisible = true;
-        buildDrillingGuide(s);
-        guideAVisible = wasA; guideBVisible = wasB;
-      }
-      // Trigger supports if checked but not yet built
-      if (document.getElementById('chk-supports').checked && !supportPreviewGroup) {
-        document.getElementById('chk-supports').dispatchEvent(new Event('change'));
+      // Export only what is currently visible — no force-build of hidden parts
+      const partsToExport = [];
+      if (wedgeMesh && wedgeVisible) partsToExport.push(wedgeMesh);
+      if (guideMesh && guideAVisible) partsToExport.push(guideMesh);
+      if (plugMeshRef && guideBVisible) partsToExport.push(plugMeshRef);
+      if (supportPreviewGroup && supportPreviewGroup.visible !== false) partsToExport.push(supportPreviewGroup);
+
+      if (partsToExport.length === 0) {
+        alert('Nothing visible to export. Aktiviere mindestens ein Teil (Wedge/Guide A/Guide B).');
+        return;
       }
 
       try {
         const exportScene = new THREE.Scene();
-
-        // Collect all meshes, merge into single geometry
-        const partsToExport = [];
-        if (wedgeMesh) partsToExport.push(wedgeMesh);
-        if (guideMesh) partsToExport.push(guideMesh);
-        if (plugMeshRef) partsToExport.push(plugMeshRef);
-        if (supportPreviewGroup) partsToExport.push(supportPreviewGroup);
 
         // Merge all into one geometry for clean STL
         const allPositions = [];
